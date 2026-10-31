@@ -34,6 +34,23 @@ else
   git -C "$WORK" fetch --depth 1 origin "$REF" && git -C "$WORK" checkout -q FETCH_HEAD
 fi
 cd "$WORK"
+# The fork's cmake/ directory lags behind its src/ tree; fill in the modules upstream 1.9.0 provides.
+UPSTREAM_VERSION="$(grep LIBGIT2_VERSION include/git2/version.h | head -1 | awk '{print $3}' | tr -d '"')"
+UPSTREAM_TAR="$ROOT/Toolchain/cache/libgit2-upstream-$UPSTREAM_VERSION.tar.gz"
+if [[ ! -f "$UPSTREAM_TAR" ]]; then
+  curl -sSL -o "$UPSTREAM_TAR" "https://github.com/libgit2/libgit2/archive/refs/tags/v$UPSTREAM_VERSION.tar.gz"
+fi
+tmp_upstream="$(mktemp -d)"
+tar -xzf "$UPSTREAM_TAR" -C "$tmp_upstream" "libgit2-$UPSTREAM_VERSION/cmake" "libgit2-$UPSTREAM_VERSION/deps" 2>/dev/null || true
+for module in "$tmp_upstream/libgit2-$UPSTREAM_VERSION/cmake"/*.cmake; do
+  name="$(basename "$module")"
+  [[ -f "cmake/$name" ]] || cp "$module" "cmake/$name"
+done
+for dep in "$tmp_upstream/libgit2-$UPSTREAM_VERSION/deps"/*; do
+  name="$(basename "$dep")"
+  [[ -d "deps/$name" ]] || cp -R "$dep" "deps/$name"
+done
+rm -rf "$tmp_upstream"
 echo "Building lg2 from holzschu/libgit2 $(git log -1 --format=%h) (libgit2 $(grep LIBGIT2_VERSION include/git2/version.h | head -1 | awk '{print $3}'))"
 curl -sSL -o examples/ios_error.h https://github.com/holzschu/ios_system/releases/download/v3.0.6/ios_error.h
 
