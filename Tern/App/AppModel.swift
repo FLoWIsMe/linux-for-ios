@@ -175,6 +175,19 @@ final class AppModel {
             }
             if let accessory = view.inputAccessoryView {
                 lines.append("Accessory: frame \(accessory.frame.integral), intrinsic \(accessory.intrinsicContentSize), superview \(String(describing: accessory.superview?.frame.integral))")
+                var ancestor = accessory.superview
+                var chain: [String] = []
+                while let current = ancestor {
+                    chain.append("\(type(of: current))\(current.frame.integral)")
+                    ancestor = current.superview
+                }
+                lines.append("Accessory ancestors: " + chain.joined(separator: " > "))
+                for sub in accessory.subviews {
+                    lines.append("Accessory subview: \(type(of: sub)) frame \(sub.frame.integral), intrinsic \(sub.intrinsicContentSize), fits \(sub.sizeThatFits(CGSize(width: accessory.bounds.width, height: 0)))")
+                }
+                if let accessoryWindow = accessory.window {
+                    lines.append("Accessory in its window: \(accessory.convert(accessory.bounds, to: accessoryWindow).integral), window frame \(accessoryWindow.frame.integral)")
+                }
             }
             lines.append("Subviews: " + view.subviews.map { "\(type(of: $0))(bg: \(String(describing: $0.backgroundColor)), opaque: \($0.isOpaque))" }.joined(separator: ", "))
         }
