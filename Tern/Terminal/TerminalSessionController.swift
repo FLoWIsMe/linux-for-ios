@@ -43,6 +43,8 @@ final class TerminalSessionController: NSObject, Identifiable {
         options.cursorStyle = settings.cursorShape.swiftTermStyle(blinking: settings.cursorBlinks)
         let font = settings.font.uiFont(size: settings.fontSize)
         terminalView = TerminalView(frame: CGRect(x: 0, y: 0, width: 320, height: 480), font: font, options: options)
+        terminalView.accessibilityIdentifier = "terminal"
+        terminalView.accessibilityLabel = "Terminal"
 
         let sessionName = "tern-" + id.uuidString
         executor = IOSSystemExecutor(sessionName: sessionName)

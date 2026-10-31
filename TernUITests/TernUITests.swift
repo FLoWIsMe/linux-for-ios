@@ -15,8 +15,9 @@ final class TernUITests: XCTestCase {
     }
 
     private func terminal() -> XCUIElement {
-        // SwiftTerm's view is the first scroll view on screen.
-        let view = app.scrollViews.firstMatch
+        // The session controller tags SwiftTerm's view; the tab strip and keyboard bar are scroll
+        // views too, so a plain scrollViews query would not do.
+        let view = app.descendants(matching: .any).matching(identifier: "terminal").firstMatch
         XCTAssertTrue(view.waitForExistence(timeout: 10))
         return view
     }
@@ -99,7 +100,7 @@ final class TernUITests: XCTestCase {
             if page < 5 { fresh.buttons["Continue"].tap() }
         }
         fresh.buttons["Start"].tap()
-        XCTAssertTrue(fresh.scrollViews.firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(fresh.descendants(matching: .any).matching(identifier: "terminal").firstMatch.waitForExistence(timeout: 10))
     }
 
     /// Full interactive round trip through a real ssh session: typed bytes must reach the remote
