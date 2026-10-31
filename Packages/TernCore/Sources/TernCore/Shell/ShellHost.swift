@@ -99,7 +99,10 @@ public enum FileDescriptorIO {
 }
 
 /// Services the interpreter needs from whatever is hosting it: the interactive session in the
-/// app, or a test harness. All calls happen on the shell thread (the thread running `Shell.run`).
+/// app, or a test harness. Most calls happen on the shell thread (the thread running `Shell.run`),
+/// but every stage of a pipeline runs on a thread of its own, so `shellWillRun`,
+/// `shellDidFinish`, `openTerminalInput` and `runHostCommand` can arrive concurrently from
+/// several threads. Implementations must be thread safe.
 public protocol ShellHost: AnyObject {
     /// Current terminal size, for builtins that lay out columns.
     var terminalSize: TerminalSize { get }

@@ -10,6 +10,8 @@ final class TestHost: ShellHost {
     private let outCollector: OutputCollector
     private let errCollector: OutputCollector
     private var finished = false
+    /// Pipeline stages run on their own threads and report through the host concurrently.
+    private let lock = NSLock()
 
     var terminalSize = TerminalSize(columns: 80, rows: 24)
     /// Lines handed to `read` (and continuation prompts), in order. Empty means EOF.
@@ -35,13 +37,16 @@ final class TestHost: ShellHost {
     var terminalError: Int32 { errPipe.write }
 
     func readLine(prompt: String, secure: Bool) -> String? {
+        lock.lock(); defer { lock.unlock() }
         prompts.append(prompt)
         guard !scriptedLines.isEmpty else { return nil }
         return scriptedLines.removeFirst()
     }
 
     func openTerminalInput() -> Int32? {
+        lock.lock()
         openedTerminalInputs += 1
+        lock.unlock()
         guard let pipe = FileDescriptorIO.makePipe() else { return nil }
         if let terminalInput {
             FileDescriptorIO.writeAll(pipe.write, terminalInput)
@@ -54,10 +59,10 @@ final class TestHost: ShellHost {
         FileDescriptorIO.closeQuietly(fd)
     }
 
-    func shellWillRun(externalCommand argv: [String]) { startedCommands.append(argv) }
-    func shellDidFinish(externalCommand argv: [String], status: Int32) { finishedCommands.append((argv, status)) }
-    func shellDidRequestExit(status: Int32) { exitStatus = status }
-    func shellDidChangeDirectory(_ path: String) { directoryChanges.append(path) }
+    func shellWillRun(externalCommand argv: [String]) { lock.lock(); startedCommands.append(argv); lock.unlock() }
+    func shellDidFinish(externalCommand argv: [String], status: Int32) { lock.lock(); finishedCommands.append((argv, status)); lock.unlock() }
+    func shellDidRequestExit(status: Int32) { lock.lock(); exitStatus = status; lock.unlock() }
+    func shellDidChangeDirectory(_ path: String) { lock.lock(); directoryChanges.append(path); lock.unlock() }
 
     func runHostCommand(_ argv: [String], io: ShellIO) -> Int32? {
         guard let command = hostCommands[argv[0]] else { return nil }
