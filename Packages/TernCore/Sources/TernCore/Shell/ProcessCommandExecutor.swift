@@ -57,7 +57,13 @@ public final class ProcessCommandExecutor: CommandExecutor {
             return ExitStatus.notFound
         }
 
+        #if canImport(Darwin)
+        var fileActions: posix_spawn_file_actions_t? = nil
+        var attributes: posix_spawnattr_t? = nil
+        #else
         var fileActions = posix_spawn_file_actions_t()
+        var attributes = posix_spawnattr_t()
+        #endif
         posix_spawn_file_actions_init(&fileActions)
         defer { posix_spawn_file_actions_destroy(&fileActions) }
         posix_spawn_file_actions_adddup2(&fileActions, command.stdin, 0)
@@ -67,7 +73,6 @@ public final class ProcessCommandExecutor: CommandExecutor {
         posix_spawn_file_actions_addchdir_np(&fileActions, command.workingDirectory)
         #endif
 
-        var attributes = posix_spawnattr_t()
         posix_spawnattr_init(&attributes)
         defer { posix_spawnattr_destroy(&attributes) }
         var flags: Int32 = Int32(POSIX_SPAWN_SETSIGDEF) | Int32(POSIX_SPAWN_SETSIGMASK)
