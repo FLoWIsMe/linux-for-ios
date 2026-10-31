@@ -38,7 +38,9 @@ final class AppModel {
     /// Creates the first tab if there is none yet. Called when the terminal screen appears.
     func ensureSession() {
         if sessions.isEmpty {
-            newSession()
+            // Automated tests can pass `-ui-command "<command>"` to run something in the first tab.
+            let testCommand = URLCommands.isUITesting ? UserDefaults.standard.string(forKey: "ui-command") : nil
+            newSession(initialCommand: testCommand)
         }
     }
 

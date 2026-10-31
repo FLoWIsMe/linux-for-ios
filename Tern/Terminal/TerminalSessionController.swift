@@ -16,6 +16,8 @@ final class TerminalSessionController: NSObject, Identifiable {
     let terminalView: TerminalView
     let session: ShellSession
     let executor: IOSSystemExecutor
+    /// The session holds its output sink weakly, so the controller keeps the bridge alive.
+    private let outputBridge: TerminalOutputBridge
 
     private(set) var title: String = "~"
     private(set) var mode: SessionInputMode = .prompt
@@ -62,7 +64,8 @@ final class TerminalSessionController: NSObject, Identifiable {
             userName: "mobile",
             hostName: "tern"
         )
-        session = ShellSession(configuration: configuration, executor: executor, output: TerminalOutputBridge(view: terminalView))
+        outputBridge = TerminalOutputBridge(view: terminalView)
+        session = ShellSession(configuration: configuration, executor: executor, output: outputBridge)
         super.init()
 
         executor.session = session
