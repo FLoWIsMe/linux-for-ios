@@ -302,6 +302,10 @@ final class KeyboardBarInputView: UIInputView {
         hosting = UIHostingController(rootView: KeyboardBarView(model: model, compact: compact))
         super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Metrics.keyboardBarHeight), inputViewStyle: .keyboard)
         allowsSelfSizing = true
+        // The hosting view sits right above the keyboard, where UIKit reports the home indicator
+        // inset as a safe area. Without this the bar lays out in 44 minus 34 points and its keys
+        // spill upward over the terminal's last row.
+        hosting.safeAreaRegions = []
         hosting.view.backgroundColor = .clear
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
         addSubview(hosting.view)
