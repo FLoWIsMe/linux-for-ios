@@ -27,6 +27,8 @@ struct TerminalScreen: View {
                     )
                     .id(controller.id)
                     .background(palette.background.color)
+                    // The host view handles the keyboard itself through the keyboard layout guide.
+                    .ignoresSafeArea(edges: .bottom)
                 } else {
                     Color.clear
                 }

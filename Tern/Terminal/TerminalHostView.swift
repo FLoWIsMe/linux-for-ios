@@ -75,11 +75,15 @@ final class TerminalContainerView: UIView {
         terminalView = view
         view.translatesAutoresizingMaskIntoConstraints = false
         addSubview(view)
+        // The container runs to the bottom of the screen (TerminalScreen ignores the bottom safe
+        // area for it) and the terminal stops at the keyboard: the keyboard layout guide tracks the
+        // real keyboard frame, accessory bar included, and sits on the home indicator inset when
+        // the keyboard is down. SwiftUI's own keyboard avoidance left the last row under the bar.
         NSLayoutConstraint.activate([
             view.leadingAnchor.constraint(equalTo: leadingAnchor),
             view.trailingAnchor.constraint(equalTo: trailingAnchor),
             view.topAnchor.constraint(equalTo: topAnchor),
-            view.bottomAnchor.constraint(equalTo: bottomAnchor),
+            view.bottomAnchor.constraint(equalTo: keyboardLayoutGuide.topAnchor),
         ])
     }
 
@@ -89,7 +93,6 @@ final class TerminalContainerView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        terminalView?.frame = bounds
         if bounds.size != lastLayoutSize, bounds.width > 0, window != nil {
             lastLayoutSize = bounds.size
             DispatchQueue.main.async { [weak self] in
