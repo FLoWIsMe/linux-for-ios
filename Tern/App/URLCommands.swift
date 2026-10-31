@@ -9,6 +9,16 @@ import Foundation
 enum URLCommands {
     static var isUITesting: Bool { ProcessInfo.processInfo.arguments.contains("-ui-testing") }
 
+    /// `-ui-ssh-key <path>`: a private key the UI tests want installed as ~/.ssh/id_ed25519 so the
+    /// interactive ssh test can authenticate. Only honored together with `-ui-testing`; the
+    /// Simulator can read the Mac's file system, which is what makes this work.
+    static var uiTestingSSHKeyPath: String? {
+        guard isUITesting else { return nil }
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-ui-ssh-key"), index + 1 < arguments.count else { return nil }
+        return arguments[index + 1]
+    }
+
     @MainActor
     static func handle(_ url: URL, model: AppModel) {
         guard url.scheme?.lowercased() == "tern" else { return }

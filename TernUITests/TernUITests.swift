@@ -104,11 +104,21 @@ final class TernUITests: XCTestCase {
 
     /// Full interactive round trip through a real ssh session: typed bytes must reach the remote
     /// shell while ssh runs in raw mode, and its output must come back. Needs a reachable host
-    /// with key authentication already set up, so it only runs when TERN_UITEST_SSH_HOST is set
-    /// (for example "user@127.0.0.1" with the app's ~/.ssh/id_ed25519.pub in authorized_keys).
+    /// with key authentication, so it only runs when TERN_UITEST_SSH_HOST is set, for example
+    /// "user@127.0.0.1" with Remote Login enabled on the Mac. TERN_UITEST_SSH_KEY names a private
+    /// key on the Mac whose .pub is in that host's authorized_keys; the app installs it as its
+    /// ~/.ssh/id_ed25519 at launch. Pass both through xcodebuild as TEST_RUNNER_TERN_UITEST_SSH_HOST
+    /// and TEST_RUNNER_TERN_UITEST_SSH_KEY.
     func testInteractiveSSHSession() throws {
-        guard let host = ProcessInfo.processInfo.environment["TERN_UITEST_SSH_HOST"], !host.isEmpty else {
-            throw XCTSkip("Set TERN_UITEST_SSH_HOST to run the interactive ssh test")
+        let environment = ProcessInfo.processInfo.environment
+        guard let host = environment["TERN_UITEST_SSH_HOST"], !host.isEmpty else {
+            throw XCTSkip("Set TERN_UITEST_SSH_HOST (and TERN_UITEST_SSH_KEY) to run the interactive ssh test")
+        }
+        if let key = environment["TERN_UITEST_SSH_KEY"], !key.isEmpty {
+            // Fresh installs get a fresh sandbox, so hand the app the test key to install.
+            app.terminate()
+            app.launchArguments += ["-ui-ssh-key", key]
+            app.launch()
         }
         let view = terminal()
         view.tap()

@@ -97,6 +97,19 @@ enum SystemEnvironment {
 
         fm.changeCurrentDirectoryPath(home)
         installDefaultDotfiles()
+        installUITestingKey()
+    }
+
+    /// Copies the key named by `-ui-ssh-key` into ~/.ssh for the UI tests (no-op otherwise).
+    private static func installUITestingKey() {
+        guard let source = URLCommands.uiTestingSSHKeyPath else { return }
+        let fm = FileManager.default
+        let destination = homeDirectory + "/.ssh/id_ed25519"
+        for suffix in ["", ".pub"] {
+            try? fm.removeItem(atPath: destination + suffix)
+            try? fm.copyItem(atPath: source + suffix, toPath: destination + suffix)
+            try? fm.setAttributes([.posixPermissions: suffix.isEmpty ? 0o600 : 0o644], ofItemAtPath: destination + suffix)
+        }
     }
 
     /// The initial exported environment handed to each new shell.
