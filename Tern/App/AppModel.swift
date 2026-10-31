@@ -166,6 +166,12 @@ final class AppModel {
             lines.append("Native foreground: \(view.nativeForegroundColor)")
             lines.append("View opaque: \(view.isOpaque), layer opaque: \(view.layer.isOpaque), alpha: \(view.alpha), bgOpacity: \(view.backgroundOpacity)")
             lines.append("Keyboard focus: \(view.isFirstResponder), accessory bar: \(view.inputAccessoryView != nil)")
+            lines.append("Frame: \(view.frame.integral), superview: \(String(describing: view.superview?.frame.integral)), window: \(String(describing: view.window?.bounds.size))")
+            lines.append("Scroll: offset \(view.contentOffset), inset \(view.contentInset), adjusted \(view.adjustedContentInset), content \(view.contentSize)")
+            if let window = view.window {
+                let inWindow = view.convert(view.bounds, to: window)
+                lines.append("In window: \(inWindow.integral), safe area bottom: \(window.safeAreaInsets.bottom)")
+            }
             lines.append("Subviews: " + view.subviews.map { "\(type(of: $0))(bg: \(String(describing: $0.backgroundColor)), opaque: \($0.isOpaque))" }.joined(separator: ", "))
         }
         lines.append("Skipped frameworks: " + (SystemEnvironment.skippedFrameworks.isEmpty ? "none" : SystemEnvironment.skippedFrameworks.keys.sorted().joined(separator: ", ")))
