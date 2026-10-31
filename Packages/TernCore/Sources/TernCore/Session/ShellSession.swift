@@ -278,6 +278,10 @@ public final class ShellSession: ShellHost {
         state.started = true
         lock.unlock()
 
+        // Keystrokes may be written to a pipe whose reader (a finished command) is gone. That must
+        // surface as EPIPE, never as a process killing SIGPIPE.
+        ShellSession.ignoreSIGPIPE()
+
         guard let pipe = FileDescriptorIO.makePipe() else { return }
         outputRead = pipe.read
         outputWrite = pipe.write
@@ -312,6 +316,14 @@ public final class ShellSession: ShellHost {
         for fd in sinks { FileDescriptorIO.closeQuietly(fd) }
         editorActive = false
         closeOutputWriteEnd()
+    }
+
+    private static let sigpipeOnce: Void = {
+        signal(SIGPIPE, SIG_IGN)
+    }()
+
+    private static func ignoreSIGPIPE() {
+        _ = sigpipeOnce
     }
 
     private func closeOutputWriteEnd() {
@@ -428,6 +440,14 @@ public final class ShellSession: ShellHost {
             if trimmed.isEmpty { continue }
             history.append(program)
             status = shell.run(program)
+
+            lock.lock()
+            let knownDirectory = state.workingDirectory
+            lock.unlock()
+            let currentDirectory = shell.workingDirectory
+            if currentDirectory != knownDirectory {
+                notifyDirectory(currentDirectory)
+            }
         }
 
         lock.lock()
