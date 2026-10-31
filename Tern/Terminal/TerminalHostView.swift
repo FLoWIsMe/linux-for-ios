@@ -39,28 +39,22 @@ struct TerminalHostView: UIViewRepresentable {
                 _ = terminalView.becomeFirstResponder()
             }
         }
-        if terminalView.window != nil && !context.coordinator.appliedPalette {
-            context.coordinator.appliedPalette = true
-            DispatchQueue.main.async {
-                controller.applyPaletteIfNeeded()
-            }
+        container.onLayout = { [weak controller] in
+            controller?.applyPaletteIfNeeded()
         }
     }
 
-    static func dismantleUIView(_ container: TerminalContainerView, coordinator: Coordinator) {
+    static func dismantleUIView(_ container: TerminalContainerView, coordinator: ()) {
         container.detach()
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    final class Coordinator {
-        var appliedPalette = false
     }
 }
 
 /// Plain container so a `TerminalView` can be moved between hosts without being torn down.
 final class TerminalContainerView: UIView {
     private weak var terminalView: TerminalView?
+    /// Called after the first layout with a real size and whenever the view moves to a window.
+    var onLayout: (() -> Void)?
+    private var lastLayoutSize: CGSize = .zero
 
     func attach(_ view: TerminalView) {
         guard view.superview !== self else { return }
@@ -83,5 +77,16 @@ final class TerminalContainerView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         terminalView?.frame = bounds
+        if bounds.size != lastLayoutSize, bounds.width > 0, window != nil {
+            lastLayoutSize = bounds.size
+            DispatchQueue.main.async { [weak self] in self?.onLayout?() }
+        }
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil {
+            DispatchQueue.main.async { [weak self] in self?.onLayout?() }
+        }
     }
 }
