@@ -7,7 +7,7 @@
 <p align="center">A real Unix terminal for iPhone and iPad. Free, open source, no account, no server.</p>
 
 Tern runs genuine Unix programs compiled for iOS: `ssh`, `scp`, `sftp`, `git` (through libgit2),
-`vim`, `curl`, `tar`, `grep`, `sed`, `awk`, `find`, `jq`, `lua`, `make` and about a hundred more,
+`vim`, `curl`, `tar`, `grep`, `sed`, `awk`, `find`, `cut`, `jq`, `lua`, `make` and about a hundred more,
 driven by a POSIX style shell with tab completion, history search, inline suggestions and syntax
 highlighting. It works offline, starts instantly, and treats your phone's keyboard as a first
 class citizen.
@@ -34,7 +34,16 @@ class citizen.
 
 ## Screenshots
 
-Screenshots land in `docs/screenshots/` once the first TestFlight build ships.
+<p align="center">
+  <img src="docs/screenshots/terminal.png" width="230" alt="The shell with syntax highlighting and the keyboard bar">
+  <img src="docs/screenshots/vim.png" width="230" alt="Vim editing a shell script">
+  <img src="docs/screenshots/light.png" width="230" alt="The light theme">
+</p>
+<p align="center">
+  <img src="docs/screenshots/onboarding.png" width="230" alt="The first onboarding page">
+  <img src="docs/screenshots/settings.png" width="230" alt="Settings with palette previews">
+  <img src="docs/screenshots/keys.png" width="230" alt="The SSH keys screen">
+</p>
 
 ## Build it
 
@@ -55,9 +64,11 @@ If you change `project.yml`, regenerate the project with [XcodeGen](https://gith
 
 ### Apple silicon simulators
 
-Most of the toolchain has arm64 Simulator slices. `vim`, `lg2`, `dash`, `jq`, `xxd` and `make` currently
-ship only x86_64 Simulator slices upstream, so on an Apple silicon Mac those commands are skipped in
-Simulator builds (the app tells you so if you type them). Device builds always include everything.
+Most of the toolchain has arm64 Simulator slices. `lg2`, `dash`, `jq` and `make` currently ship
+only x86_64 Simulator slices upstream, so on an Apple silicon Mac those commands are skipped in
+Simulator builds (the app tells you so if you type them). `vim` and `xxd` get arm64 Simulator
+slices from `scripts/build-vim.sh`, which also upgrades them to Vim 8.2. Device builds always
+include everything.
 
 ## Repository layout
 
