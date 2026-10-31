@@ -40,6 +40,10 @@ final class IOSSystemExecutor: CommandExecutor {
         lock.lock()
         windowSize = size
         lock.unlock()
+        // The iOS ports have no TIOCGWINSZ: vim and friends read LINES and COLUMNS when the
+        // SIGWINCH that ios_setWindowSize sends arrives, so the variables must change first.
+        setenv("COLUMNS", String(size.columns), 1)
+        setenv("LINES", String(size.rows), 1)
         ios_setWindowSize(Int32(size.columns), Int32(size.rows), sessionID)
     }
 
