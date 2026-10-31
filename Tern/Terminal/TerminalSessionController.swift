@@ -127,6 +127,8 @@ final class TerminalSessionController: NSObject, Identifiable {
         terminalView.selectedTextBackgroundColor = palette.selection.uiColor
         terminalView.backgroundColor = palette.background.uiColor
         terminalView.updateColorScheme(palette.isDark ? .dark : .light)
+        NSLog("TernPalette applied %@ bg=%@ layer=%@ fg=%@ window=%@", palette.id, terminalView.nativeBackgroundColor.description,
+              String(describing: terminalView.layer.backgroundColor), terminalView.nativeForegroundColor.description, String(describing: terminalView.window != nil))
     }
 
     private func applyFont() {
