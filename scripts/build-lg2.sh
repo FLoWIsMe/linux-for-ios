@@ -68,6 +68,8 @@ build_platform() {
   pushd "$build" >/dev/null
   local common="-arch arm64 -target $target -O2 $minflag"
   cmake "$WORK" \
+    -DCMAKE_PROJECT_INCLUDE="$ROOT/scripts/cmake/lg2-compat.cmake" \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DREGEX_BACKEND=builtin -DBUILD_CLAR=OFF -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=ON -DBUILD_SHARED_LIBS=OFF -DTHREADSAFE=OFF \
     -DCMAKE_INSTALL_PREFIX=@rpath \
     -DCMAKE_BUILD_TYPE=Release \
