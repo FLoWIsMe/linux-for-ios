@@ -65,7 +65,7 @@ final class TernUITests: XCTestCase {
     func testSettingsOpens() {
         _ = terminal()
         app.buttons["More"].tap()
-        app.buttons["Settings"].tap()
+        app.buttons["menu.settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         screenshot("03-settings")
         app.buttons["Done"].tap()
@@ -74,12 +74,12 @@ final class TernUITests: XCTestCase {
     func testKeysAndHostsOpen() {
         _ = terminal()
         app.buttons["More"].tap()
-        app.buttons["SSH Keys"].tap()
+        app.buttons["menu.keys"].tap()
         XCTAssertTrue(app.navigationBars["SSH Keys"].waitForExistence(timeout: 5))
         screenshot("04-keys")
         app.buttons["Done"].tap()
         app.buttons["More"].tap()
-        app.buttons["Hosts"].tap()
+        app.buttons["menu.hosts"].tap()
         XCTAssertTrue(app.navigationBars["Hosts"].waitForExistence(timeout: 5))
         screenshot("05-hosts")
         app.buttons["Done"].tap()
@@ -99,6 +99,27 @@ final class TernUITests: XCTestCase {
         }
         fresh.buttons["Start"].tap()
         XCTAssertTrue(fresh.scrollViews.firstMatch.waitForExistence(timeout: 10))
+    }
+
+    /// Full interactive round trip through a real ssh session: typed bytes must reach the remote
+    /// shell while ssh runs in raw mode, and its output must come back. Needs a reachable host
+    /// with key authentication already set up, so it only runs when TERN_UITEST_SSH_HOST is set
+    /// (for example "user@127.0.0.1" with the app's ~/.ssh/id_ed25519.pub in authorized_keys).
+    func testInteractiveSSHSession() throws {
+        guard let host = ProcessInfo.processInfo.environment["TERN_UITEST_SSH_HOST"], !host.isEmpty else {
+            throw XCTSkip("Set TERN_UITEST_SSH_HOST to run the interactive ssh test")
+        }
+        let view = terminal()
+        view.tap()
+        app.typeText("ssh -o StrictHostKeyChecking=accept-new \(host)\n")
+        // Give the connection a moment; the remote tty buffers anything typed early anyway.
+        RunLoop.current.run(until: Date().addingTimeInterval(8))
+        app.typeText("echo interactive-$((20+22))\n")
+        waitForText("interactive-42", timeout: 10)
+        screenshot("09-ssh-session")
+        app.typeText("exit\n")
+        app.typeText("echo back-home\n")
+        waitForText("back-home", timeout: 10)
     }
 
     /// The keyboard bar is an input accessory view: it only exists while the software keyboard is up.

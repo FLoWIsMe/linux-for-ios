@@ -136,10 +136,14 @@ struct TabStrip: View {
 
             Menu {
                 Button { model.presentedSheet = .hosts } label: { Label("Hosts", systemImage: "network") }
+                    .accessibilityIdentifier("menu.hosts")
                 Button { model.presentedSheet = .keys } label: { Label("SSH Keys", systemImage: "key") }
+                    .accessibilityIdentifier("menu.keys")
                 Button { model.presentedSheet = .help } label: { Label("Help", systemImage: "questionmark.circle") }
+                    .accessibilityIdentifier("menu.help")
                 Divider()
                 Button { model.presentedSheet = .settings } label: { Label("Settings", systemImage: "gearshape") }
+                    .accessibilityIdentifier("menu.settings")
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 15, weight: .semibold))
