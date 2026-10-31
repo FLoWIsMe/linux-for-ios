@@ -21,6 +21,7 @@ Package.resolved.bak
 Toolchain/cache/
 Toolchain/frameworks/
 Toolchain/vimruntime/
+Toolchain/local/
 
 # Local signing configuration (team id, bundle id overrides). Commit Config/Shared.xcconfig only.
 Config/Local.xcconfig
