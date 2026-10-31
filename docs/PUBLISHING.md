@@ -42,7 +42,9 @@ This is the complete path from a clean checkout to a build on the App Store. Ste
 
    This fetches the toolchain if needed, archives a Release build for devices, exports it for the
    App Store with automatic (cloud managed) signing and uploads it. Processing takes 5 to 15
-   minutes; the build then appears under TestFlight.
+   minutes; the build then appears under TestFlight. On a Mac where the account owner is signed
+   in to Xcode (Xcode > Settings > Accounts) the key arguments can be left out and Xcode uses that
+   account instead.
 
    The same thing runs from GitHub Actions: Actions > Release to TestFlight > Run workflow, with
    `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` stored as repository secrets.

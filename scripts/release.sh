@@ -2,11 +2,13 @@
 # Archives Tern for the App Store and uploads the build to App Store Connect (TestFlight).
 #
 # Usage:
-#   scripts/release.sh --key-id KEYID --issuer-id ISSUER [--build-number N] [--no-upload]
+#   scripts/release.sh [--key-id KEYID --issuer-id ISSUER] [--build-number N] [--no-upload]
 #
-# Needs an App Store Connect API key at ~/.appstoreconnect/private_keys/AuthKey_KEYID.p8 with the
-# App Manager role. Signing is automatic: Xcode creates or reuses the distribution certificate and
-# profile through the API key (cloud managed signing), so nothing has to be installed by hand.
+# With an App Store Connect API key (~/.appstoreconnect/private_keys/AuthKey_KEYID.p8, App Manager
+# role) the whole thing runs unattended, which is what CI needs. Without one, Xcode uses the Apple
+# ID signed in under Xcode > Settings > Accounts, which is fine on a developer's own Mac. Signing is
+# automatic either way: Xcode creates or reuses the distribution certificate and profile (cloud
+# managed signing), so nothing has to be installed by hand.
 #
 # The team id comes from Config/Local.xcconfig if present, else Config/Shared.xcconfig.
 
@@ -29,15 +31,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$KEY_ID" || -z "$ISSUER_ID" ]]; then
-  echo "usage: $0 --key-id KEYID --issuer-id ISSUER [--build-number N] [--no-upload]" >&2
-  exit 2
-fi
-
-KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"
-if [[ ! -f "$KEY_PATH" ]]; then
-  echo "error: API key not found at $KEY_PATH" >&2
-  exit 1
+auth=()
+if [[ -n "$KEY_ID" || -n "$ISSUER_ID" ]]; then
+  if [[ -z "$KEY_ID" || -z "$ISSUER_ID" ]]; then
+    echo "usage: $0 [--key-id KEYID --issuer-id ISSUER] [--build-number N] [--no-upload]" >&2
+    exit 2
+  fi
+  KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"
+  if [[ ! -f "$KEY_PATH" ]]; then
+    echo "error: API key not found at $KEY_PATH" >&2
+    exit 1
+  fi
+  auth=(-authenticationKeyPath "$KEY_PATH" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER_ID")
+else
+  echo "No API key given: using the Apple ID signed in to Xcode for signing and upload."
 fi
 
 read_setting() {
@@ -83,10 +90,8 @@ xcodebuild archive \
   -destination 'generic/platform=iOS' \
   -archivePath "$ARCHIVE" \
   -allowProvisioningUpdates \
-  -authenticationKeyPath "$KEY_PATH" \
-  -authenticationKeyID "$KEY_ID" \
-  -authenticationKeyIssuerID "$ISSUER_ID" \
-  "${extra_settings[@]}" \
+  ${auth[@]+"${auth[@]}"} \
+  ${extra_settings[@]+"${extra_settings[@]}"} \
   | tail -40
 
 method="app-store-connect"
@@ -122,9 +127,7 @@ xcodebuild -exportArchive \
   -exportOptionsPlist "$BUILD_DIR/ExportOptions.plist" \
   -exportPath "$EXPORT_DIR" \
   -allowProvisioningUpdates \
-  -authenticationKeyPath "$KEY_PATH" \
-  -authenticationKeyID "$KEY_ID" \
-  -authenticationKeyIssuerID "$ISSUER_ID" \
+  ${auth[@]+"${auth[@]}"} \
   | tail -40
 
 if [[ "$UPLOAD" -eq 1 ]]; then
