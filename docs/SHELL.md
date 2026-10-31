@@ -102,6 +102,11 @@ the shell never changes the process's own standard descriptors.
 `help`, `history` and `clear` are forwarded to the host application first (the terminal owns
 history and the screen); `clear` falls back to printing the clear screen sequence.
 
+A few coreutils that the toolchain lacks are builtins too, with the everyday options: `cut`
+(`-b`, `-c`, `-f`, `-d`, `-s`, `--output-delimiter`, `--complement`), `seq` (`-s`, `-w`, `-f`,
+decimals), `yes`, `rev`, `tac`, `mktemp` (`-d`, `-t`, `-q`, templates), `realpath` (`-e`, `-m`,
+`-q`) and `tty`. They read named files or standard input like the originals.
+
 ### Options
 
 `set -e` (errexit, with the usual exceptions for conditions, `&&`/`||` lists and `!`), `set -x`

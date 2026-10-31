@@ -164,6 +164,9 @@ enum SystemEnvironment {
             alias ll='ls -lah'
             alias la='ls -A'
             alias ..='cd ..'
+            # tar understands zip archives: unzip file.zip, zip archive.zip file1 dir2
+            alias unzip='tar -xf'
+            alias zip='tar -acf'
 
             """
             try? contents.write(toFile: ternrc, atomically: true, encoding: .utf8)
