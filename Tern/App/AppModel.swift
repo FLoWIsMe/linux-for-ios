@@ -171,6 +171,10 @@ final class AppModel {
             if let window = view.window {
                 let inWindow = view.convert(view.bounds, to: window)
                 lines.append("In window: \(inWindow.integral), safe area bottom: \(window.safeAreaInsets.bottom)")
+                lines.append("Keyboard guide (window): \(window.keyboardLayoutGuide.layoutFrame.integral)")
+            }
+            if let accessory = view.inputAccessoryView {
+                lines.append("Accessory: frame \(accessory.frame.integral), intrinsic \(accessory.intrinsicContentSize), superview \(String(describing: accessory.superview?.frame.integral))")
             }
             lines.append("Subviews: " + view.subviews.map { "\(type(of: $0))(bg: \(String(describing: $0.backgroundColor)), opaque: \($0.isOpaque))" }.joined(separator: ", "))
         }
