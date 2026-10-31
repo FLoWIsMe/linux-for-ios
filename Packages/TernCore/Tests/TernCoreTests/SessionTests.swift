@@ -271,6 +271,7 @@ final class SessionTests: XCTestCase {
         Thread.sleep(forTimeInterval: 0.3)
         XCTAssertEqual(session.mode, .cooked(command: "sleep"))
         XCTAssertEqual(session.runningCommand?.first, "sleep")
+        XCTAssertNotEqual(session.mode, .prompt)
         XCTAssertEqual(recorder.started.count, 1, "the delegate hears busy once per pipeline")
         waitForPrompt()
         XCTAssertEqual(recorder.finished.count, 1)

@@ -20,6 +20,14 @@ public enum SessionInputMode: Equatable, Sendable {
     case reading(prompt: String)
     /// The session has exited.
     case ended
+
+    /// The command that owns the keyboard in `cooked` and `raw` mode.
+    public var commandName: String? {
+        switch self {
+        case .cooked(let command), .raw(let command): return command
+        default: return nil
+        }
+    }
 }
 
 /// Main thread callbacks about the session's state. Every method has a default empty implementation.
@@ -186,9 +194,9 @@ public final class ShellSession: ShellHost {
         var mode: SessionInputMode = .prompt
         var size: TerminalSize = .fallback
         var runningCommand: [String]? = nil
-        /// External commands currently running; a pipeline runs several at once and the keyboard
-        /// goes back to the prompt only when the last one is done.
-        var runningCount = 0
+        /// External commands currently running, oldest first. A pipeline runs several at once and
+        /// the keyboard goes back to the prompt only when the last one is done.
+        var running: [[String]] = []
         var forcedRaw = false
         var lineRequest: LineRequest? = nil
         /// Read descriptor to write descriptor for open terminal input pipes.
@@ -943,9 +951,8 @@ public final class ShellSession: ShellHost {
 
     public func shellWillRun(externalCommand argv: [String]) {
         lock.lock()
-        state.runningCount += 1
-        let first = state.runningCount == 1
-        // In a pipeline the stage started last is the one reading the keyboard (`cat f | less`).
+        let first = state.running.isEmpty
+        state.running.append(argv)
         state.runningCommand = argv
         if first { state.forcedRaw = false }
         if !state.forcedRaw { state.mode = .cooked(command: argv.first ?? "") }
@@ -965,15 +972,25 @@ public final class ShellSession: ShellHost {
 
     public func shellDidFinish(externalCommand argv: [String], status: Int32) {
         lock.lock()
-        state.runningCount = max(0, state.runningCount - 1)
-        let last = state.runningCount == 0
+        if let index = state.running.lastIndex(of: argv) { state.running.remove(at: index) }
+        let last = state.running.isEmpty
+        var modeForSiblings: SessionInputMode? = nil
         if last {
             state.runningCommand = nil
             state.forcedRaw = false
             state.mode = .prompt
+        } else if let survivor = state.running.last {
+            // A sibling stage is still running (`cat file | less`): the keyboard belongs to it.
+            state.runningCommand = survivor
+            state.mode = state.forcedRaw ? .raw(command: survivor.first ?? "") : .cooked(command: survivor.first ?? "")
+            modeForSiblings = state.mode
         }
         let directory = state.workingDirectory
         lock.unlock()
+        if let modeForSiblings {
+            notifyMode(modeForSiblings)
+            notifyTitle(modeForSiblings.commandName ?? "")
+        }
         guard last else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
