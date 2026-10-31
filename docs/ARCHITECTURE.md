@@ -89,6 +89,16 @@ forwards them to `ShellSession.setRawInput`.
   thread streams (`thread_stdin`, `thread_stdout`, `thread_stderr` through a small C shim because
   Swift cannot assign C thread local variables), passes the window size, and quotes arguments the
   way ios_system's own `concatenateArgv` does so no second round of expansion happens.
+* ios_system answers `isatty` by comparing a command's stream with the session's stream, so the
+  executor keeps three long lived handles on the terminal as the session streams and shares them
+  only with commands whose stdout, stderr or stdin really is the terminal; pipes and files get
+  private handles. The session stdin is one fixed descriptor number that the keyboard pipe of the
+  command reading the terminal is `dup2`ed onto. One tty pipe per session carries keystrokes to
+  password prompts and pagers. The whole arrangement exists because pipeline stages start at the
+  same time and ios_system keeps that state per session, not per command.
+* On resize the executor updates `LINES` and `COLUMNS` both in the process environment and in the
+  running command's own copy (`ios_setenv`), then lets `ios_setWindowSize` send `SIGWINCH`; the
+  iOS ports read the variables instead of `TIOCGWINSZ`.
 * `TerminalScreen` hosts a SwiftTerm `TerminalView` per session and the custom keyboard bar.
 * Everything the user sees is themed through `Theme`: a light and a dark variant for the chrome
   plus a set of 16 ANSI colors, background, foreground and cursor color for the terminal.
