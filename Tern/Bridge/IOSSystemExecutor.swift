@@ -35,6 +35,10 @@ final class IOSSystemExecutor: CommandExecutor {
     private var terminalInput: UnsafeMutablePointer<FILE>?
     private var terminalInputDescriptor: Int32 = -1
     private var idleInput: (read: Int32, write: Int32)?
+    /// The tty pipe ios_system reads password prompts and pager keys from. One per session for
+    /// the same reason: a pipeline stage that ended used to close the tty under the pager.
+    private var ttyFile: UnsafeMutablePointer<FILE>?
+    private var ttyPipe: (read: Int32, write: Int32)?
 
     /// Set by the session so interactive callbacks can flip the keyboard mode.
     weak var session: ShellSession?
@@ -51,6 +55,8 @@ final class IOSSystemExecutor: CommandExecutor {
         if let terminalError { fclose(terminalError) }
         if let terminalInput { fclose(terminalInput) }
         if let idleInput { close(idleInput.read); close(idleInput.write) }
+        if let ttyFile { fclose(ttyFile) }
+        if let ttyPipe { close(ttyPipe.write) }
         // sessionID is intentionally leaked: ios_system may still hold the pointer in its session table.
     }
 
@@ -90,8 +96,30 @@ final class IOSSystemExecutor: CommandExecutor {
             terminalInputDescriptor = descriptor
             terminalInput = file
         }
+        if ttyFile == nil {
+            guard let pipe = FileDescriptorIO.makePipe(), let file = fdopen(pipe.read, "r") else { return nil }
+            ttyPipe = pipe
+            ttyFile = file
+            ttyWriteDescriptor = pipe.write
+        }
         guard let terminalInput, let terminalOutput, let terminalError else { return nil }
         return (terminalInput, terminalOutput, terminalError)
+    }
+
+    /// Throws away keystrokes a previous command left in the tty pipe.
+    private func drainTTY() {
+        lock.lock()
+        let file = ttyFile
+        let descriptor = ttyPipe?.read ?? -1
+        lock.unlock()
+        guard let file, descriptor >= 0 else { return }
+        let flags = fcntl(descriptor, F_GETFL)
+        _ = fcntl(descriptor, F_SETFL, flags | O_NONBLOCK)
+        var scratch = [UInt8](repeating: 0, count: 4096)
+        while read(descriptor, &scratch, scratch.count) > 0 {}
+        _ = fcntl(descriptor, F_SETFL, flags)
+        fpurge(file)
+        clearerr(file)
     }
 
     // MARK: Window size
@@ -198,15 +226,13 @@ final class IOSSystemExecutor: CommandExecutor {
             return ExitStatus.cannotExecute
         }
 
-        // The tty pipe receives keystrokes while a command owns the terminal (password prompts, less).
-        let tty = FileDescriptorIO.makePipe()
-        let ttyFile = tty.flatMap { fdopen($0.read, "r") }
-
         lock.lock()
         runningCommands += 1
-        if let tty { ttyWriteDescriptor = tty.write }
+        let firstCommand = runningCommands == 1
         let size = windowSize
+        let ttyFile = self.ttyFile
         lock.unlock()
+        if firstCommand { drainTTY() }
 
         ios_switchSession(sessionID)
         ios_setContext(sessionID)
@@ -246,11 +272,8 @@ final class IOSSystemExecutor: CommandExecutor {
         lock.lock()
         runningCommands -= 1
         let lastCommandFinished = runningCommands == 0
-        if let tty, ttyWriteDescriptor == tty.write { ttyWriteDescriptor = -1 }
         if lastCommandFinished { rawInputRequested = false }
         lock.unlock()
-        if let ttyFile { fclose(ttyFile) }
-        if let tty { close(tty.write) }
         if lastCommandFinished {
             session?.setRawInput(false)
         }
