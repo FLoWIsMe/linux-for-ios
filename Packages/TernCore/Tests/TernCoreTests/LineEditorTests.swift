@@ -232,7 +232,8 @@ final class LineEditorTests: XCTestCase {
         let editor = makeEditor()
         let output = type(editor, "echo hi\r")
         XCTAssertEqual(output.event, .submit("echo hi"))
-        XCTAssertTrue(output.text.hasSuffix("echo hi\r\n"), output.text)
+        XCTAssertTrue(output.text.hasSuffix("\r\n"), output.text)
+        XCTAssertTrue(output.text.contains("$ echo hi"), output.text)
         XCTAssertFalse(editor.isActive)
     }
 
