@@ -164,6 +164,7 @@ final class AppModel {
             lines.append("Renderer: \(view.isUsingMetalRenderer ? "Metal" : "Core Graphics")")
             lines.append("Native background: \(view.nativeBackgroundColor), layer: \(String(describing: view.layer.backgroundColor))")
             lines.append("Native foreground: \(view.nativeForegroundColor)")
+            lines.append("View opaque: \(view.isOpaque), layer opaque: \(view.layer.isOpaque), alpha: \(view.alpha), bgOpacity: \(view.backgroundOpacity)")
             lines.append("Subviews: " + view.subviews.map { "\(type(of: $0))(bg: \(String(describing: $0.backgroundColor)), opaque: \($0.isOpaque))" }.joined(separator: ", "))
         }
         lines.append("Skipped frameworks: " + (SystemEnvironment.skippedFrameworks.isEmpty ? "none" : SystemEnvironment.skippedFrameworks.keys.sorted().joined(separator: ", ")))
