@@ -8,7 +8,7 @@
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REF="master"
+REF="main"
 JOBS="$(sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 while [[ $# -gt 0 ]]; do
   case "$1" in
