@@ -1,9 +1,22 @@
 import Foundation
 import ios_system
+import TernSupport
 
 /// One time setup of ios_system and the process environment, plus knowledge about which parts of
 /// the toolchain made it into this build.
 enum SystemEnvironment {
+    /// True when the OS user database has no entry for this process and TernSupport is answering
+    /// getpwuid/getpwnam for the tools instead (the case on the Simulator, which has no /etc/passwd).
+    static var usesUserDatabaseFallback: Bool { tern_passwd_fallback_active() }
+
+    /// The Unix user name tools see: the real one when the OS knows it, otherwise the fallback.
+    static var userName: String {
+        if let entry = getpwuid(getuid()), let name = entry.pointee.pw_name {
+            return String(cString: name)
+        }
+        return String(cString: tern_passwd_fallback_name())
+    }
+
     /// `~` for everything the user does. Visible in the Files app.
     static let homeDirectory: String = {
         let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -47,8 +60,8 @@ enum SystemEnvironment {
         setenv("HOME", home, 1)
         setenv("SSH_HOME", home, 1)
         setenv("CURL_HOME", home, 1)
-        setenv("USER", "mobile", 1)
-        setenv("LOGNAME", "mobile", 1)
+        setenv("USER", userName, 1)
+        setenv("LOGNAME", userName, 1)
         setenv("SHELL", "/bin/tsh", 1)
         setenv("TERM", "xterm-256color", 1)
         setenv("COLORTERM", "truecolor", 1)

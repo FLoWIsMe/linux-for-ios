@@ -169,6 +169,7 @@ final class AppModel {
         }
         lines.append("Skipped frameworks: " + (SystemEnvironment.skippedFrameworks.isEmpty ? "none" : SystemEnvironment.skippedFrameworks.keys.sorted().joined(separator: ", ")))
         lines.append("Home: \(SystemEnvironment.homeDirectory)")
+        lines.append("User: \(SystemEnvironment.userName) (uid \(getuid()), \(SystemEnvironment.usesUserDatabaseFallback ? "TernSupport fallback" : "system user database"))")
         return lines.joined(separator: "\n") + "\n"
     }
 

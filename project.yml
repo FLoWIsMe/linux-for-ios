@@ -52,6 +52,9 @@ targets:
         product: SwiftTerm
       - package: TernCore
         product: TernCore
+      - target: TernSupport
+        embed: true
+        codeSign: true
       - framework: Toolchain/frameworks/ios_system.xcframework
         embed: true
         codeSign: true
@@ -119,6 +122,31 @@ targets:
           python3 "$SRCROOT/scripts/embed-toolchain.py"
         basedOnDependencyAnalysis: false
         showEnvVars: false
+  TernSupport:
+    # Launch-time C shims for the toolchain (see Support/TernSupport/TernSupport.c).
+    type: framework
+    platform: iOS
+    sources:
+      - path: Support/TernSupport
+        headerVisibility: public
+    info:
+      path: Support/TernSupport/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+    settings:
+      base:
+        PRODUCT_NAME: TernSupport
+        PRODUCT_BUNDLE_IDENTIFIER: $(TERN_BUNDLE_ID).support
+        DEVELOPMENT_TEAM: $(TERN_TEAM_ID)
+        CODE_SIGN_STYLE: Automatic
+        DEFINES_MODULE: "YES"
+        SKIP_INSTALL: "YES"
+        DYLIB_INSTALL_NAME_BASE: "@rpath"
+        SUPPORTS_MACCATALYST: "NO"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        GCC_C_LANGUAGE_STANDARD: gnu11
+        CLANG_WARN_UNGUARDED_AVAILABILITY: YES_AGGRESSIVE
   TernTests:
     type: bundle.unit-test
     platform: iOS
