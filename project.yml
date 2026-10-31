@@ -33,8 +33,6 @@ packages:
     from: 1.99.2
   TernCore:
     path: Packages/TernCore
-  TernToolchain:
-    path: Packages/TernToolchain
 targets:
   Tern:
     type: application
@@ -54,8 +52,9 @@ targets:
         product: SwiftTerm
       - package: TernCore
         product: TernCore
-      - package: TernToolchain
-        product: TernToolchain
+      - framework: Toolchain/frameworks/ios_system.xcframework
+        embed: true
+        codeSign: true
     info:
       path: Tern/Info.plist
       properties:
@@ -106,6 +105,14 @@ targets:
         SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
         SWIFT_EMIT_LOC_STRINGS: "YES"
         ENABLE_PREVIEWS: "YES"
+    preBuildScripts:
+      - name: Fetch Toolchain
+        script: |
+          if ! bash "$SRCROOT/scripts/fetch-toolchain.sh" --check >/dev/null 2>&1; then
+            bash "$SRCROOT/scripts/fetch-toolchain.sh"
+          fi
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
     postBuildScripts:
       - name: Embed Toolchain
         script: |

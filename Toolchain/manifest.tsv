@@ -10,11 +10,13 @@
 #   lang     lua.
 #   tools    jq, bc, make.
 #
-# The ios_system framework itself is linked through Swift Package Manager
-# (Packages/TernToolchain/Package.swift) because the app calls its C API directly.
-# Everything below is loaded at runtime with dlopen by ios_system and only needs to be
-# embedded in Tern.app/Frameworks. scripts/fetch-toolchain.sh downloads and verifies
-# these archives; scripts/embed-toolchain.sh copies the right slice into the app.
+#   linked   ios_system itself. The app calls its C API, so Xcode links and embeds it directly
+#            (see project.yml); scripts/embed-toolchain.py skips this group.
+#
+# Everything in the other groups is loaded at runtime with dlopen by ios_system and only needs
+# to be embedded in Tern.app/Frameworks. scripts/fetch-toolchain.sh downloads and verifies
+# these archives; scripts/embed-toolchain.py copies the right slice into the app.
+ios_system	https://github.com/holzschu/ios_system/releases/download/v3.0.6/ios_system.xcframework.zip	c9c6dc4cde45cc271ccc8bd0553ce4d3149eced1f0ee3d9e0ce01885d93526e6	linked
 awk	https://github.com/holzschu/ios_system/releases/download/v3.0.6/awk.xcframework.zip	675d3b2e3b5ba60ae1a727528b2cf5e11eda262d404c1e9708dc7e061898df86	core
 curl_ios	https://github.com/holzschu/ios_system/releases/download/v3.0.6/curl_ios.xcframework.zip	f9a74e005115aad3b51dd8daa2fb4727eb8425018805d7dd2973e598af65f968	core
 files	https://github.com/holzschu/ios_system/releases/download/v3.0.6/files.xcframework.zip	5db63958f686cc79f107bafd0d50feff32fb2b64d0dd976478c5dd405f7600b0	core

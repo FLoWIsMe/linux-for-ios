@@ -7,9 +7,9 @@ picks the slice that matches the platform and architectures being built, copies 
 framework into Tern.app/Frameworks, strips headers, and code signs it with the same identity
 Xcode uses for the app.
 
-The ios_system framework itself is linked through Swift Package Manager; everything handled
-here is loaded by ios_system at runtime with dlopen, so it only needs to be present in the
-app bundle, not linked.
+The ios_system framework itself is linked and embedded by Xcode (project.yml references the
+xcframework directly); everything handled here is loaded by ios_system at runtime with dlopen,
+so it only needs to be present in the app bundle, not linked.
 
 Some upstream xcframeworks (vim, lg2, dash, jq, xxd) ship an x86_64 Simulator slice but no
 arm64 Simulator slice. On an Apple silicon Mac those commands are skipped for Simulator builds
@@ -60,7 +60,10 @@ def main() -> None:
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        expected.append(line.split("\t")[0])
+        fields = line.split("\t")
+        if len(fields) >= 4 and fields[3] == "linked":
+            continue  # linked by Xcode itself, see project.yml
+        expected.append(fields[0])
 
     missing = [name for name in expected if not (frameworks_src / f"{name}.xcframework").is_dir()]
     if missing:

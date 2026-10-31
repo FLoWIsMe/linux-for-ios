@@ -26,7 +26,7 @@ what makes the app fast, offline capable and acceptable to App Review.
 | Path | What it is |
 | --- | --- |
 | `Packages/TernCore` | Pure Swift, Foundation only. Shell interpreter, line editor, completion, history, highlighting, prompt, and `ShellSession` which ties them together. Builds and tests on macOS and Linux. |
-| `Packages/TernToolchain` | Swift package that links the `ios_system` xcframework (checksum verified). |
+| `Toolchain/frameworks/ios_system.xcframework` | Downloaded by the fetch script and linked by Xcode directly. |
 | `Toolchain/manifest.tsv` | Every other prebuilt command framework with its download URL and SHA-256. |
 | `scripts/fetch-toolchain.sh` | Downloads and verifies the frameworks into `Toolchain/frameworks` (git ignored). |
 | `scripts/embed-toolchain.py` | Xcode build phase: copies the right slice of each framework into `Tern.app/Frameworks` and signs it. |
