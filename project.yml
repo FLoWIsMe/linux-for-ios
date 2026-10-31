@@ -42,7 +42,10 @@ targets:
         excludes:
           - "**/*.md"
           - "Resources/vimconfig"
+          - "Resources/terminfo"
       - path: Tern/Resources/vimconfig
+        type: folder
+      - path: Tern/Resources/terminfo
         type: folder
       - path: Toolchain/vimruntime/vim
         type: folder

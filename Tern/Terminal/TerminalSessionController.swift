@@ -153,7 +153,7 @@ final class TerminalSessionController: NSObject, Identifiable {
     }
 
     func focus() {
-        terminalView.becomeFirstResponder()
+        _ = terminalView.becomeFirstResponder()
     }
 
     func terminate() {

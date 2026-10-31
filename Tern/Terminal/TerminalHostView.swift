@@ -22,7 +22,7 @@ struct TerminalHostView: UIViewRepresentable {
         let terminalView = controller.terminalView
         keyboardBar.terminalView = terminalView
         keyboardBar.send = { [weak controller] bytes in controller?.send(bytes) }
-        keyboardBar.hideKeyboard = { [weak terminalView] in terminalView?.resignFirstResponder() }
+        keyboardBar.hideKeyboard = { [weak terminalView] in _ = terminalView?.resignFirstResponder() }
 
         if showKeyboardBar {
             if !(terminalView.inputAccessoryView is KeyboardBarInputView) {
@@ -36,7 +36,7 @@ struct TerminalHostView: UIViewRepresentable {
 
         if becomeFirstResponder && !terminalView.isFirstResponder && terminalView.window != nil {
             DispatchQueue.main.async {
-                terminalView.becomeFirstResponder()
+                _ = terminalView.becomeFirstResponder()
             }
         }
     }
