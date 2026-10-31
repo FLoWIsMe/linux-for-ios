@@ -110,15 +110,16 @@ final class TernUITests: XCTestCase {
     /// with key authentication, so it only runs when TERN_UITEST_SSH_HOST is set, for example
     /// "user@127.0.0.1" with Remote Login enabled on the Mac. TERN_UITEST_SSH_KEY names a private
     /// key on the Mac whose .pub is in that host's authorized_keys; the app installs it as its
-    /// ~/.ssh/id_ed25519 at launch. Pass both through xcodebuild as TEST_RUNNER_TERN_UITEST_SSH_HOST
-    /// and TEST_RUNNER_TERN_UITEST_SSH_KEY.
+    /// ~/.ssh/id_ed25519 at launch. Pass both as build settings on the xcodebuild command line:
+    /// `xcodebuild test ... TERN_UITEST_SSH_HOST=user@host TERN_UITEST_SSH_KEY=/path/to/key`.
     func testInteractiveSSHSession() throws {
-        let environment = ProcessInfo.processInfo.environment
-        guard let host = environment["TERN_UITEST_SSH_HOST"], !host.isEmpty else {
-            let seen = environment.keys.filter { $0.contains("TERN") || $0.contains("RUNNER") }.sorted().joined(separator: ", ")
-            throw XCTSkip("Set TERN_UITEST_SSH_HOST (and TERN_UITEST_SSH_KEY) to run the interactive ssh test (saw: \(seen))")
+        // The values arrive through the test bundle's Info.plist (see project.yml), because
+        // xcodebuild does not pass environment variables to UI test runners.
+        let info = Bundle(for: TernUITests.self).infoDictionary ?? [:]
+        guard let host = info["TernUITestSSHHost"] as? String, !host.isEmpty else {
+            throw XCTSkip("Pass TERN_UITEST_SSH_HOST (and TERN_UITEST_SSH_KEY) to xcodebuild to run the interactive ssh test")
         }
-        if let key = environment["TERN_UITEST_SSH_KEY"], !key.isEmpty {
+        if let key = info["TernUITestSSHKey"] as? String, !key.isEmpty {
             // Fresh installs get a fresh sandbox, so hand the app the test key to install.
             app.terminate()
             app.launchArguments += ["-ui-ssh-key", key]

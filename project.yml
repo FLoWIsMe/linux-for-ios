@@ -166,12 +166,20 @@ targets:
       - path: TernUITests
     dependencies:
       - target: Tern
+    info:
+      path: TernUITests/Info.plist
+      properties:
+        # Optional settings for the interactive ssh test, passed on the xcodebuild command line:
+        #   xcodebuild test ... TERN_UITEST_SSH_HOST=user@host TERN_UITEST_SSH_KEY=/path/to/key
+        TernUITestSSHHost: $(TERN_UITEST_SSH_HOST)
+        TernUITestSSHKey: $(TERN_UITEST_SSH_KEY)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(TERN_BUNDLE_ID).uitests
         DEVELOPMENT_TEAM: $(TERN_TEAM_ID)
-        GENERATE_INFOPLIST_FILE: "YES"
         TEST_TARGET_NAME: Tern
+        TERN_UITEST_SSH_HOST: ""
+        TERN_UITEST_SSH_KEY: ""
 schemes:
   Tern:
     build:
