@@ -41,7 +41,7 @@ struct RGB: Codable, Hashable {
         b = UInt8(hex & 0xFF)
     }
 
-    var color: Color { Color(red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255) }
+    var color: SwiftUI.Color { SwiftUI.Color(red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255) }
     var uiColor: UIColor { UIColor(red: CGFloat(r) / 255, green: CGFloat(g) / 255, blue: CGFloat(b) / 255, alpha: 1) }
     var terminalColor: SwiftTerm.Color { SwiftTerm.Color(red8: UInt16(r), green8: UInt16(g), blue8: UInt16(b)) }
     var shellColor: RGBColor { RGBColor(red: r, green: g, blue: b) }
@@ -147,29 +147,29 @@ struct TerminalPalette: Codable, Hashable, Identifiable {
 
 /// Colors for the app chrome (everything that is not the terminal grid). Each resolves for light and dark.
 enum ChromeColor {
-    static let background = Color.dynamic(light: RGB(hex: 0xFBFBF9), dark: RGB(hex: 0x0B0F14))
-    static let surface = Color.dynamic(light: RGB(hex: 0xFFFFFF), dark: RGB(hex: 0x121820))
-    static let surfaceElevated = Color.dynamic(light: RGB(hex: 0xF3F4F2), dark: RGB(hex: 0x19202A))
-    static let textPrimary = Color.dynamic(light: RGB(hex: 0x1F2328), dark: RGB(hex: 0xE6EDF3))
-    static let textSecondary = Color.dynamic(light: RGB(hex: 0x57606A), dark: RGB(hex: 0x9AA4B2))
-    static let textTertiary = Color.dynamic(light: RGB(hex: 0x8C959F), dark: RGB(hex: 0x6B7785))
-    static let hairline = Color.dynamic(light: RGB(hex: 0xE6E8E4), dark: RGB(hex: 0x202833))
-    static let control = Color.dynamic(light: RGB(hex: 0xEDEEEB), dark: RGB(hex: 0x1C2430))
-    static let controlPressed = Color.dynamic(light: RGB(hex: 0xDFE1DC), dark: RGB(hex: 0x27313F))
-    static let accent = Color.dynamic(light: RGB(hex: 0xE8521C), dark: RGB(hex: 0xFF6A2F))
-    static let onAccent = Color.white
-    static let danger = Color.dynamic(light: RGB(hex: 0xCF222E), dark: RGB(hex: 0xFF6B6B))
-    static let success = Color.dynamic(light: RGB(hex: 0x116329), dark: RGB(hex: 0x5FD08A))
+    static let background = SwiftUI.Color.dynamic(light: RGB(hex: 0xFBFBF9), dark: RGB(hex: 0x0B0F14))
+    static let surface = SwiftUI.Color.dynamic(light: RGB(hex: 0xFFFFFF), dark: RGB(hex: 0x121820))
+    static let surfaceElevated = SwiftUI.Color.dynamic(light: RGB(hex: 0xF3F4F2), dark: RGB(hex: 0x19202A))
+    static let textPrimary = SwiftUI.Color.dynamic(light: RGB(hex: 0x1F2328), dark: RGB(hex: 0xE6EDF3))
+    static let textSecondary = SwiftUI.Color.dynamic(light: RGB(hex: 0x57606A), dark: RGB(hex: 0x9AA4B2))
+    static let textTertiary = SwiftUI.Color.dynamic(light: RGB(hex: 0x8C959F), dark: RGB(hex: 0x6B7785))
+    static let hairline = SwiftUI.Color.dynamic(light: RGB(hex: 0xE6E8E4), dark: RGB(hex: 0x202833))
+    static let control = SwiftUI.Color.dynamic(light: RGB(hex: 0xEDEEEB), dark: RGB(hex: 0x1C2430))
+    static let controlPressed = SwiftUI.Color.dynamic(light: RGB(hex: 0xDFE1DC), dark: RGB(hex: 0x27313F))
+    static let accent = SwiftUI.Color.dynamic(light: RGB(hex: 0xE8521C), dark: RGB(hex: 0xFF6A2F))
+    static let onAccent = SwiftUI.Color.white
+    static let danger = SwiftUI.Color.dynamic(light: RGB(hex: 0xCF222E), dark: RGB(hex: 0xFF6B6B))
+    static let success = SwiftUI.Color.dynamic(light: RGB(hex: 0x116329), dark: RGB(hex: 0x5FD08A))
 
     static func accentRGB(for scheme: ColorScheme) -> RGB {
         scheme == .dark ? RGB(hex: 0xFF6A2F) : RGB(hex: 0xE8521C)
     }
 }
 
-extension Color {
+extension SwiftUI.Color {
     /// A color that resolves differently in light and dark mode.
-    static func dynamic(light: RGB, dark: RGB) -> Color {
-        Color(UIColor { traits in
+    static func dynamic(light: RGB, dark: RGB) -> SwiftUI.Color {
+        SwiftUI.Color(UIColor { traits in
             traits.userInterfaceStyle == .dark ? dark.uiColor : light.uiColor
         })
     }

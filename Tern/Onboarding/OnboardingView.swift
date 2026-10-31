@@ -26,31 +26,31 @@ struct OnboardingView: View {
             TabView(selection: $page) {
                 OnboardingPage(
                     title: "A real terminal.",
-                    body: "Tern runs Unix tools compiled for iPhone and iPad: ssh, git, vim, curl, grep and a hundred more. No emulator, no server, works offline."
+                    text: "Tern runs Unix tools compiled for iPhone and iPad: ssh, git, vim, curl, grep and a hundred more. No emulator, no server, works offline."
                 ) { TerminalPreview(palette: model.settings.palette(for: colorScheme)) }
                 .tag(0)
 
                 OnboardingPage(
                     title: "Keys you actually need.",
-                    body: "A bar above the keyboard adds esc, tab, ctrl, alt and arrows. Ctrl latches: tap ctrl, then c. Tab completes. Hold an arrow to repeat."
+                    text: "A bar above the keyboard adds esc, tab, ctrl, alt and arrows. Ctrl latches: tap ctrl, then c. Tab completes. Hold an arrow to repeat."
                 ) { KeyboardPreview(model: model.keyboardBar) }
                 .tag(1)
 
                 OnboardingPage(
                     title: "Your files, in Files.",
-                    body: "Home is this app's Documents folder. It shows up in the Files app, so you can drop files in, edit them with vim, and sync repositories with git."
+                    text: "Home is this app's Documents folder. It shows up in the Files app, so you can drop files in, edit them with vim, and sync repositories with git."
                 ) { FilesPreview() }
                 .tag(2)
 
                 OnboardingPage(
                     title: "Connect in two steps.",
-                    body: "Generate a key, add it to your server, connect. Keys and hosts also have their own screens, reachable from the menu or by typing keys and hosts."
+                    text: "Generate a key, add it to your server, connect. Keys and hosts also have their own screens, reachable from the menu or by typing keys and hosts."
                 ) { SSHPreview() }
                 .tag(3)
 
                 OnboardingPage(
                     title: "Make it yours.",
-                    body: "Light, dark or system. Eleven terminal palettes, three fonts, your own prompt. Everything is in Settings, or type tern in the terminal."
+                    text: "Light, dark or system. Eleven terminal palettes, three fonts, your own prompt. Everything is in Settings, or type tern in the terminal."
                 ) { AppearancePicker(settings: model.settings) }
                 .tag(4)
             }
@@ -82,7 +82,7 @@ struct OnboardingView: View {
 
 private struct OnboardingPage<Visual: View>: View {
     let title: String
-    let body: String
+    let text: String
     @ViewBuilder var visual: Visual
 
     var body: some View {
@@ -98,7 +98,7 @@ private struct OnboardingPage<Visual: View>: View {
                             .font(Typography.display(34))
                             .foregroundStyle(ChromeColor.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text(self.body)
+                        Text(text)
                             .font(Typography.body(17))
                             .foregroundStyle(ChromeColor.textSecondary)
                             .lineSpacing(3)

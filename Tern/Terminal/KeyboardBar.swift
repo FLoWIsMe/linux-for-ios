@@ -202,7 +202,7 @@ struct KeyboardBarView: View {
         }
         .padding(.horizontal, 6)
         .frame(height: Metrics.keyboardBarHeight)
-        .background(Color.clear)
+        .background(SwiftUI.Color.clear)
     }
 
     @ViewBuilder
@@ -263,7 +263,7 @@ private struct BarKey: View {
         }
     }
 
-    private var background: Color {
+    private var background: SwiftUI.Color {
         if latched { return ChromeColor.accent }
         return pressed ? ChromeColor.controlPressed : ChromeColor.control
     }
