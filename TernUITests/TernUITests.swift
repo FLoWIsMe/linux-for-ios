@@ -90,12 +90,44 @@ final class TernUITests: XCTestCase {
         fresh.launchArguments = ["-onboarding.completed", "NO", "-ui-testing"]
         fresh.launch()
         XCTAssertTrue(fresh.buttons["Continue"].waitForExistence(timeout: 10))
-        let attachment = XCTAttachment(screenshot: fresh.screenshot())
-        attachment.name = "06-onboarding"
-        attachment.lifetime = .keepAlways
-        add(attachment)
-        for _ in 0..<4 { fresh.buttons["Continue"].tap() }
+        for page in 1...5 {
+            let attachment = XCTAttachment(screenshot: fresh.screenshot())
+            attachment.name = "06-onboarding-\(page)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            if page < 5 { fresh.buttons["Continue"].tap() }
+        }
         fresh.buttons["Start"].tap()
         XCTAssertTrue(fresh.scrollViews.firstMatch.waitForExistence(timeout: 10))
+    }
+
+    /// The keyboard bar is an input accessory view: it only exists while the software keyboard is up.
+    /// The Simulator must not have "Connect Hardware Keyboard" enabled for this test.
+    func testKeyboardBarTypesControlSequences() throws {
+        let view = terminal()
+        view.tap()
+        let control = app.buttons["Control"]
+        guard control.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Software keyboard did not appear (hardware keyboard connected?)")
+        }
+        screenshot("07-keyboard-bar")
+
+        // A command that reads a line: ctrl-C from the bar must interrupt it.
+        app.typeText("cat\n")
+        app.buttons["Interrupt, Control C"].tap()
+        app.typeText("echo bar-ok\n")
+        waitForText("bar-ok")
+
+        // Latch control, press U: the line editor clears the text typed so far.
+        app.typeText("this text will be erased")
+        control.tap()
+        app.typeText("u")
+        app.typeText("echo after-ctrl-u\n")
+        waitForText("after-ctrl-u")
+
+        // Up arrow recalls the previous command.
+        app.buttons["Up arrow"].tap()
+        app.typeText("\n")
+        screenshot("08-keyboard-history")
     }
 }
