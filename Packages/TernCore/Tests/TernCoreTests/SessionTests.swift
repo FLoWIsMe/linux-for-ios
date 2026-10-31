@@ -148,6 +148,27 @@ final class SessionRecorder: ShellSessionDelegate {
     func sessionDidExit(_ session: ShellSession, status: Int32) { exitStatus = status }
 }
 
+final class ScreenModelTests: XCTestCase {
+    func testPromptAndOutputSequence() {
+        var model = ScreenModel()
+        model.feed("\r\u{1b}[J$ \r\u{1b}[2C")
+        model.feed("\r\u{1b}[J$ e\r\u{1b}[3C")
+        model.feed("\r\u{1b}[J$ echo hello\r\u{1b}[12C\r\n")
+        model.feed("hello\n")
+        model.feed("\r\u{1b}[J$ \r\u{1b}[2C")
+        XCTAssertEqual(model.text, "$ echo hello\nhello\n$ ")
+    }
+
+    func testSplitSequencesAndClear() {
+        var model = ScreenModel()
+        model.feed("ab\u{1b}[")
+        model.feed("2Dxy\r")
+        model.feed("\n")
+        model.feed("\u{1b}[H\u{1b}[2J\u{1b}[3Jz")
+        XCTAssertEqual(model.text, "z")
+    }
+}
+
 final class SessionTests: XCTestCase {
     private var home = ""
     private var terminal: FakeTerminal!
@@ -227,7 +248,7 @@ final class SessionTests: XCTestCase {
         startSession()
         waitForPrompt()
         type("echo hello\r")
-        XCTAssertTrue(waitUntil { self.screen == "$ echo hello\nhello\n$ " }, screen)
+        XCTAssertTrue(waitUntil { self.screen == "$ echo hello\nhello\n$ " }, "screen: \(screen.debugDescription) raw: \(terminal.text.debugDescription)")
         XCTAssertEqual(session.shell.lastExitStatus, 0)
     }
 
