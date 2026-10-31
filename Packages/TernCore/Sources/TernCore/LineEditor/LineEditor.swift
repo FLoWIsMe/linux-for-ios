@@ -565,7 +565,7 @@ public final class LineEditor {
         case .backspace, .control("h"):
             if !state.query.isEmpty {
                 state.query.removeLast()
-                runSearch(&state, from: history.entries.count - 1)
+                runSearch(&state, from: state.matchIndex ?? (history.entries.count - 1))
             }
         case .control("r"):
             if let match = state.matchIndex {

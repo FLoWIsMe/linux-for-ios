@@ -182,11 +182,11 @@ public enum LineTokenizer {
 
     /// Escapes characters that are special to the shell with backslashes.
     public static func escape(_ text: String) -> String {
-        let special: Set<Character> = [" ", "\t", "\n", "\"", "'", "\\", "$", "`", "!", "#", "&", "|", ";", "(", ")", "<", ">", "*", "?", "[", "]", "{", "}", "~"]
+        let special: Set<Character> = [" ", "\t", "\n", "\"", "'", "\\", "$", "`", "!", "#", "&", "|", ";", "(", ")", "<", ">", "*", "?", "[", "]", "{", "}"]
         var result = ""
         for (index, ch) in text.enumerated() {
             if special.contains(ch) {
-                if ch == "~" || ch == "#" {
+                if ch == "#" {
                     if index == 0 { result.append("\\") }
                 } else {
                     result.append("\\")
