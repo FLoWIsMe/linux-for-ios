@@ -262,6 +262,20 @@ final class SessionTests: XCTestCase {
         XCTAssertTrue(recorder.started.contains { $0.first == "sort" }, "\(recorder.started)")
     }
 
+    func testPipelineStaysBusyUntilTheLastStageFinishes() {
+        startSession()
+        waitForPrompt()
+        // env exits at once; the keyboard must stay with sleep, the stage that is still running.
+        type("env true | sleep 0.8\r")
+        XCTAssertTrue(waitUntil { self.session.mode == .cooked(command: "sleep") }, "\(session.mode)")
+        Thread.sleep(forTimeInterval: 0.3)
+        XCTAssertEqual(session.mode, .cooked(command: "sleep"))
+        XCTAssertEqual(session.runningCommand?.first, "sleep")
+        XCTAssertEqual(recorder.started.count, 1, "the delegate hears busy once per pipeline")
+        waitForPrompt()
+        XCTAssertEqual(recorder.finished.count, 1)
+    }
+
     func testCookedInputToCatAndEndOfFile() {
         startSession()
         waitForPrompt()

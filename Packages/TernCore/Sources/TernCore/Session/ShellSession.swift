@@ -186,6 +186,9 @@ public final class ShellSession: ShellHost {
         var mode: SessionInputMode = .prompt
         var size: TerminalSize = .fallback
         var runningCommand: [String]? = nil
+        /// External commands currently running; a pipeline runs several at once and the keyboard
+        /// goes back to the prompt only when the last one is done.
+        var runningCount = 0
         var forcedRaw = false
         var lineRequest: LineRequest? = nil
         /// Read descriptor to write descriptor for open terminal input pipes.
@@ -940,15 +943,21 @@ public final class ShellSession: ShellHost {
 
     public func shellWillRun(externalCommand argv: [String]) {
         lock.lock()
+        state.runningCount += 1
+        let first = state.runningCount == 1
+        // In a pipeline the stage started last is the one reading the keyboard (`cat f | less`).
         state.runningCommand = argv
-        state.forcedRaw = false
-        state.mode = .cooked(command: argv.first ?? "")
+        if first { state.forcedRaw = false }
+        if !state.forcedRaw { state.mode = .cooked(command: argv.first ?? "") }
         let mode = state.mode
         lock.unlock()
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.cooked.reset(echo: true)
-            self.delegate?.session(self, didStartCommand: argv)
+            if first {
+                self.cooked.reset(echo: true)
+                // The delegate hears about busy and idle, not about every pipeline stage.
+                self.delegate?.session(self, didStartCommand: argv)
+            }
         }
         notifyMode(mode)
         notifyTitle(argv.first ?? "")
@@ -956,11 +965,16 @@ public final class ShellSession: ShellHost {
 
     public func shellDidFinish(externalCommand argv: [String], status: Int32) {
         lock.lock()
-        state.runningCommand = nil
-        state.forcedRaw = false
-        state.mode = .prompt
+        state.runningCount = max(0, state.runningCount - 1)
+        let last = state.runningCount == 0
+        if last {
+            state.runningCommand = nil
+            state.forcedRaw = false
+            state.mode = .prompt
+        }
         let directory = state.workingDirectory
         lock.unlock()
+        guard last else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             // Text typed but not yet submitted while the command ran belongs to the next prompt.
