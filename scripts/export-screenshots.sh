@@ -38,18 +38,27 @@ run_device() {
   rm -rf "$export_dir"
   mkdir -p "$export_dir"
   xcrun xcresulttool export attachments --path "$bundle" --output-path "$export_dir" >/dev/null
-  # Attachments are exported with their names plus a suffix; copy the PNGs with clean names.
-  local index=0
-  for file in "$export_dir"/*.png; do
-    [[ -f "$file" ]] || continue
-    local base
-    base="$(basename "$file")"
-    local name="${base%%_*}"
-    name="${name%.png}"
-    cp "$file" "$OUT/${tag}-${name}.png"
-    index=$((index + 1))
-  done
-  echo "Exported $index screenshots for $tag"
+  # Attachments come out with generated file names; manifest.json maps them to the names the
+  # tests gave them ("01-terminal_0_<uuid>.png").
+  local count
+  count="$(python3 - "$export_dir" "$OUT" "$tag" <<'PY'
+import json, pathlib, shutil, sys
+export_dir, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+tag = sys.argv[3]
+manifest = json.loads((export_dir / "manifest.json").read_text())
+count = 0
+for test in manifest:
+    for attachment in test.get("attachments", []):
+        suggested = attachment.get("suggestedHumanReadableName", "")
+        if not suggested.endswith(".png"):
+            continue
+        name = suggested.split("_")[0]
+        shutil.copy(export_dir / attachment["exportedFileName"], out / f"{tag}-{name}.png")
+        count += 1
+print(count)
+PY
+)"
+  echo "Exported $count screenshots for $tag"
 }
 
 run_device "$IPHONE" "iphone-6.9"
