@@ -13,6 +13,8 @@ final class Interpreter {
     var shell: Shell { shellRef! }
     var ctx: ShellContext
     let jobs: JobTable
+    /// The background job this interpreter runs, if any; `kill` cancels it through this reference.
+    var job: Job?
     /// Exit status of the most recent command substitution, used as `$?` after `x=$(cmd)`.
     var lastSubstitutionStatus: Int32?
 
@@ -26,7 +28,9 @@ final class Interpreter {
     func subshellCopy() -> Interpreter {
         var copy = ctx
         copy.subshellDepth += 1
-        return Interpreter(shell: shell, context: copy, jobs: jobs)
+        let child = Interpreter(shell: shell, context: copy, jobs: jobs)
+        child.job = job
+        return child
     }
 
     var executor: CommandExecutor { shell.executor }
@@ -34,6 +38,7 @@ final class Interpreter {
 
     func checkInterrupt() throws {
         if shell.isInterrupted { throw ControlFlow.interrupted }
+        if let job, job.cancelled { throw ControlFlow.interrupted }
     }
 
     // MARK: Diagnostics
@@ -644,7 +649,7 @@ final class Interpreter {
         host?.shellWillRun(externalCommand: argv)
         let status = executor.run(command)
         host?.shellDidFinish(externalCommand: argv, status: status)
-        if shell.isInterrupted { throw ControlFlow.interrupted }
+        try checkInterrupt()
         return status
     }
 

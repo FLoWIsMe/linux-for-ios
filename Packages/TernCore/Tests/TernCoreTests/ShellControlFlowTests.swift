@@ -167,6 +167,37 @@ final class ShellControlFlowTests: XCTestCase {
         XCTAssertEqual(result.stdout, "1\n0\n")
         assertShell("false & wait $!; echo $?", prints: "1\n")
         assertShell("sleep 5 & kill %1; wait; echo killed", prints: "killed\n")
+        let timed = ShellTesting.run("sleep 5 & kill %1; wait; jobs; echo done")
+        XCTAssertEqual(timed.stdout, "done\n")
+        let listing = ShellTesting.run("sleep 0.3 & jobs")
+        XCTAssertTrue(listing.stdout.hasPrefix("[1]  Running"), listing.stdout)
+        XCTAssertTrue(listing.stdout.contains("sleep 0.3"), listing.stdout)
+    }
+
+    func testBackgroundKillIsFast() {
+        let start = Date()
+        assertShell("sleep 5 & sleep 0.05; kill %1; wait; echo fast", prints: "fast\n")
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2)
+    }
+
+    func testTimeKeyword() {
+        let result = ShellTesting.run("time sleep 0.1")
+        XCTAssertTrue(result.stderr.contains("real"), result.stderr)
+        XCTAssertTrue(result.stderr.contains("0m0.1"), result.stderr)
+    }
+
+    func testInterruptRunsIntTrap() {
+        let host = TestHost()
+        let shell = ShellTesting.makeShell(host: host)
+        let expectation = expectation(description: "finished")
+        Thread.detachNewThread {
+            shell.run("trap 'echo trapped' INT; sleep 30")
+            expectation.fulfill()
+        }
+        Thread.sleep(forTimeInterval: 0.3)
+        shell.interrupt()
+        wait(for: [expectation], timeout: 3)
+        XCTAssertEqual(host.finish().stdout, "trapped\n")
     }
 
     func testInterruptStopsRunningCommand() {

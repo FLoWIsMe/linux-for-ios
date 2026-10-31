@@ -344,6 +344,10 @@ public final class Shell {
             }
         } catch ControlFlow.interrupted {
             status = ExitStatus.interrupted
+            if let handler = interpreter.ctx.traps["INT"], !handler.isEmpty {
+                interpreter.ctx.lastStatus = status
+                _ = try? interpreter.evaluateSource(handler)
+            }
         } catch ControlFlow.returnFromFunction(let code) {
             status = code
         } catch ControlFlow.breakLoop, ControlFlow.continueLoop {

@@ -523,7 +523,12 @@ extension Interpreter {
                 continue
             }
             job.cancel()
-            executor.interruptRunningCommand()
+            // The job may be between commands; interrupt a few times so a command that starts right
+            // after the cancel flag is set still gets the signal.
+            for attempt in 0..<4 {
+                executor.interruptRunningCommand()
+                if job.wait(until: Date().addingTimeInterval(0.02 * Double(attempt + 1))) { break }
+            }
         }
         return status
     }
