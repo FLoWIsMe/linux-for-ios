@@ -176,10 +176,21 @@ private struct KeyboardPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            KeyboardBarView(model: model, compact: true)
-                .allowsHitTesting(false)
-                .padding(.vertical, 6)
-                .background(ChromeColor.surfaceElevated, in: RoundedRectangle(cornerRadius: Metrics.radiusControl, style: .continuous))
+            // A still life of the bar's first keys; the live bar scrolls and would not fit the card.
+            HStack(spacing: 5) {
+                ForEach(["esc", "tab", "ctrl", "alt", "\u{2190}", "\u{2193}", "\u{2191}", "\u{2192}", "^C"], id: \.self) { key in
+                    Text(key)
+                        .font(key.count > 2 ? Typography.body(12, weight: .medium) : Typography.mono(13, weight: .medium))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .foregroundStyle(key == "^C" ? ChromeColor.accent : ChromeColor.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                        .background(ChromeColor.control, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                }
+            }
+            .padding(8)
+            .background(ChromeColor.surfaceElevated, in: RoundedRectangle(cornerRadius: Metrics.radiusControl, style: .continuous))
             VStack(alignment: .leading, spacing: 10) {
                 tip(key: "ctrl", text: "then c stops a command, then r searches history")
                 tip(key: "tab", text: "completes commands and paths, twice lists options")
@@ -208,18 +219,19 @@ private struct FilesPreview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             row("folder.fill", "On My iPhone", indent: 0, dim: true)
+            // The Files app hides dotfiles, so show the kind of things people actually see there.
             row("folder.fill", "Tern", indent: 1, dim: false)
-            row("doc.text", ".ternrc", indent: 2, dim: false)
-            row("doc.text", ".vimrc", indent: 2, dim: false)
-            row("folder", ".ssh", indent: 2, dim: false)
             row("folder", "projects", indent: 2, dim: false)
+            row("folder", "scripts", indent: 2, dim: false)
             row("doc.text", "notes.md", indent: 2, dim: false)
+            row("doc.text", "deploy.sh", indent: 2, dim: false)
+            row("doc.zipper", "backup.tar.gz", indent: 2, dim: false)
         }
         .padding(.vertical, 8)
         .background(ChromeColor.surface, in: RoundedRectangle(cornerRadius: Metrics.radiusCard, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Metrics.radiusCard, style: .continuous).strokeBorder(ChromeColor.hairline, lineWidth: 1))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("The Files app showing the Tern folder with .ternrc, .vimrc, .ssh, projects and notes.md")
+        .accessibilityLabel("The Files app showing the Tern folder with projects, scripts, notes.md, deploy.sh and backup.tar.gz")
     }
 
     private func row(_ icon: String, _ name: String, indent: Int, dim: Bool) -> some View {
