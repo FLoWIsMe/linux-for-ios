@@ -679,7 +679,7 @@ final class Parser {
                 try advance()
             } else if terminatorToken.isOperator(.semicolonAmpersand) {
                 try advance()
-                terminator = .fallthrough
+                terminator = .fallThrough
             } else if terminatorToken.isOperator(.doubleSemicolonAmpersand) {
                 try advance()
                 terminator = .continueMatching

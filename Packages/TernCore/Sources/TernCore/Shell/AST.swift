@@ -80,7 +80,7 @@ struct CaseItem: Equatable {
 
 enum CaseTerminator: Equatable {
     case stop
-    case fallthrough
+    case fallThrough
     case continueMatching
 }
 

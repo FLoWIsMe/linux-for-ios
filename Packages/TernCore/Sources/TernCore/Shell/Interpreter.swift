@@ -254,7 +254,7 @@ final class Interpreter {
                 status = try execute(item.body)
                 switch item.terminator {
                 case .stop: return status
-                case .fallthrough: fallingThrough = true
+                case .fallThrough: fallingThrough = true
                 case .continueMatching: fallingThrough = false
                 }
             }
