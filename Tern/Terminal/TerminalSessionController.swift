@@ -82,8 +82,9 @@ final class TerminalSessionController: NSObject, Identifiable {
         terminalView.smartDashesType = .no
         terminalView.smartInsertDeleteType = .no
         terminalView.spellCheckingType = .no
-        applyPalette(palette)
+        // Fonts first: SwiftTerm resets the default colors when fonts change.
         applyFont()
+        applyPalette(palette)
         title = "~"
         session.start()
     }
@@ -107,10 +108,15 @@ final class TerminalSessionController: NSObject, Identifiable {
     }
 
     func refreshAppearance() {
-        applyPalette(settings.palette(for: colorScheme))
         applyFont()
+        applyPalette(settings.palette(for: colorScheme))
         terminalView.setCursorStyle(settings.cursorShape.swiftTermStyle(blinking: settings.cursorBlinks))
         terminalView.optionAsMetaKey = settings.optionAsMeta
+    }
+
+    /// Re-applies colors once the view is on screen; SwiftTerm recreates its terminal state on the first layout.
+    func applyPaletteIfNeeded() {
+        applyPalette(settings.palette(for: colorScheme))
     }
 
     private func applyPalette(_ palette: TerminalPalette) {

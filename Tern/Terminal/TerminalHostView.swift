@@ -39,10 +39,22 @@ struct TerminalHostView: UIViewRepresentable {
                 _ = terminalView.becomeFirstResponder()
             }
         }
+        if terminalView.window != nil && !context.coordinator.appliedPalette {
+            context.coordinator.appliedPalette = true
+            DispatchQueue.main.async {
+                controller.applyPaletteIfNeeded()
+            }
+        }
     }
 
-    static func dismantleUIView(_ container: TerminalContainerView, coordinator: ()) {
+    static func dismantleUIView(_ container: TerminalContainerView, coordinator: Coordinator) {
         container.detach()
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator {
+        var appliedPalette = false
     }
 }
 
