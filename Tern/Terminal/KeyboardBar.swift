@@ -190,10 +190,11 @@ struct KeyboardBarView: View {
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
+                    // Interrupt first: it is the key people need in a hurry.
+                    keyButton(.interrupt)
                     ForEach(KeyboardBarKey.symbols) { key in
                         keyButton(key)
                     }
-                    keyButton(.interrupt)
                 }
                 .padding(.horizontal, 2)
             }

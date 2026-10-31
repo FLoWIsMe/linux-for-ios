@@ -295,9 +295,32 @@ extension TerminalSessionController: ShellSessionDelegate {
 /// be reachable from the drain thread.
 final class TerminalOutputBridge: TerminalOutputSink {
     private let view: TerminalView
+    /// UI tests read the screen through the view's accessibility value; it is refreshed after
+    /// output settles. Off in normal use, where the view's own line based accessibility suffices.
+    private let mirrorsScreenForTests = URLCommands.isUITesting
+    private var mirrorScheduled = false
+
     init(view: TerminalView) { self.view = view }
 
     func terminalWrite(_ bytes: [UInt8]) {
         view.feed(byteArray: bytes[...])
+        guard mirrorsScreenForTests else { return }
+        DispatchQueue.main.async { [self] in
+            guard !mirrorScheduled else { return }
+            mirrorScheduled = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [self] in
+                mirrorScheduled = false
+                view.accessibilityValue = screenText()
+            }
+        }
+    }
+
+    /// The visible rows, trimmed, joined with newlines.
+    private func screenText() -> String {
+        var lines = view.visibleRowsText(0..<view.terminalDimensions.rows).map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+        while lines.last?.isEmpty == true { lines.removeLast() }
+        return lines.joined(separator: "\n")
     }
 }
