@@ -18,13 +18,13 @@ This is the complete path from a clean checkout to a build on the App Store. Ste
    Utilities. Price free. Availability all countries.
 4. App privacy: answer "No, we do not collect data from this app". Tern has no analytics.
 5. Age rating: answer no to everything. It comes out as 4+.
-6. Export compliance: Tern contains OpenSSL and OpenSSH, so answer that the app uses encryption,
-   that it is not limited to Apple's own frameworks, and that it uses standard algorithms. Submit
-   the annual self classification report to the US Bureau of Industry and Security if your account
-   has not done so this year (the App Store Connect flow links to the form). An alternative is to
-   rely on the open source exemption, which requires emailing the source URL to BIS and NSA; the
-   first option is simpler. Tick "Yes" for availability in France if asked; Tern is a general
-   purpose tool and needs no French import declaration beyond the standard one.
+6. Export compliance: Tern contains OpenSSL and OpenSSH but uses only standard, published
+   algorithms for TLS and SSH, so `Info.plist` declares `ITSAppUsesNonExemptEncryption = false`
+   (the declaration a-Shell has shipped with since 2020). App Store Connect then asks nothing
+   further per build. The app's encryption is still subject to US export rules: if your account
+   has not filed the annual self classification report with the Bureau of Industry and Security
+   this year, do so (the form is linked from App Store Connect's export compliance help). To change
+   the declaration, remove the key from `project.yml` and answer the questions per build instead.
 7. Screenshots: run `scripts/export-screenshots.sh` on a Mac with the Simulator. It drives the UI
    tests on an iPhone 6.9 inch and an iPad 13 inch simulator and drops PNGs in
    `fastlane/screenshots/en-US`. Upload the iPhone and iPad sets. Framed marketing screenshots are

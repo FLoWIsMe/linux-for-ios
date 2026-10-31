@@ -123,6 +123,8 @@ def main() -> None:
         thin_to_requested_archs(binary, archs, set(chosen.get("SupportedArchitectures", [])))
         if name in HOME_RELATIVE_FRAMEWORKS:
             retarget_home_paths(binary, name)
+        strip_bitcode(binary)
+        fix_minimum_os_version(framework_dst, binary)
 
         if sign_allowed and identity:
             cmd = ["codesign", "--force", "--sign", identity]
@@ -264,6 +266,49 @@ def retarget_home_paths(binary: Path, name: str) -> None:
         fail(f"{name}: a Documents/. path survived outside the patched sections")
     if shutil.which("codesign"):
         subprocess.run(["codesign", "--force", "--sign", "-", str(binary)], check=False, capture_output=True)
+
+
+def strip_bitcode(binary: Path) -> None:
+    """App Store Connect rejects binaries that still carry a bitcode segment; several upstream
+    frameworks were built before Xcode stopped emitting it."""
+    if not binary.is_file():
+        return
+    try:
+        load = subprocess.run(["otool", "-l", str(binary)], check=True, capture_output=True, text=True).stdout
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return
+    if "__LLVM" not in load:
+        return
+    subprocess.run(["xcrun", "bitcode_strip", "-r", str(binary), "-o", str(binary)], check=True)
+    print(f"  {binary.name}: removed bitcode", flush=True)
+    if shutil.which("codesign"):
+        subprocess.run(["codesign", "--force", "--sign", "-", str(binary)], check=False, capture_output=True)
+
+
+def fix_minimum_os_version(framework: Path, binary: Path) -> None:
+    """One upstream Info.plist ships MinimumOSVersion as the unexpanded template value
+    "ios_version_min", which App Store Connect refuses. Replace anything that is not a version
+    with the binary's own minimum OS, or 14.0 if that cannot be read."""
+    info = framework / "Info.plist"
+    if not info.is_file():
+        return
+    try:
+        current = plistlib.loads(info.read_bytes()).get("MinimumOSVersion")
+    except Exception:
+        return
+    if isinstance(current, str) and current.replace(".", "").isdigit():
+        return
+    version = "14.0"
+    try:
+        shown = subprocess.run(["vtool", "-show-build", str(binary)], check=True, capture_output=True, text=True).stdout
+        for line in shown.splitlines():
+            if line.strip().startswith("minos"):
+                version = line.split()[-1]
+                break
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    subprocess.run(["plutil", "-replace", "MinimumOSVersion", "-string", version, str(info)], check=True)
+    print(f"  {framework.name}: MinimumOSVersion {current!r} -> {version}", flush=True)
 
 
 def thin_to_requested_archs(binary: Path, archs: list[str], available: set[str]) -> None:

@@ -86,6 +86,9 @@ targets:
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         NSHumanReadableCopyright: Copyright 2026 Daelyn Doughty. MIT License.
+        # Export compliance: Tern uses only standard, published algorithms (OpenSSL and OpenSSH for
+        # TLS and SSH), the same declaration a-Shell ships with. See docs/PUBLISHING.md.
+        ITSAppUsesNonExemptEncryption: false
         CFBundleURLTypes:
           - CFBundleURLName: com.daelyndoughty.tern
             CFBundleURLSchemes: [tern]
