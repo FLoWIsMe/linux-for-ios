@@ -156,6 +156,9 @@ public final class ShellSession: ShellHost {
     private let executor: CommandExecutor
     private weak var output: TerminalOutputSink?
     private let editor: LineEditor
+    /// The `ShellHost` the interpreter talks to. It exists before the session finishes initializing
+    /// and forwards every call here.
+    private let hostBridge: SessionHostBridge
 
     private let lock = NSLock()
     private var state = SessionState()
@@ -248,9 +251,17 @@ public final class ShellSession: ShellHost {
         initialState.workingDirectory = configuration.workingDirectory
         self.state = initialState
 
+        // The output pipe must exist before the shell is created: the interpreter captures the
+        // terminal descriptors when it builds its root descriptor table.
+        if let pipe = FileDescriptorIO.makePipe() {
+            outputRead = pipe.read
+            outputWrite = pipe.write
+        }
+        let bridge = SessionHostBridge(outputDescriptor: outputWrite, initialSize: configuration.terminalSize)
+        self.hostBridge = bridge
         let shell = Shell(
             executor: executor,
-            host: nil,
+            host: bridge,
             environment: configuration.environment,
             workingDirectory: configuration.workingDirectory,
             homeDirectory: configuration.homeDirectory
@@ -262,7 +273,7 @@ public final class ShellSession: ShellHost {
             columns: configuration.terminalSize.columns
         )
         self.editor = LineEditor(configuration: editorConfiguration, history: history, completionEngine: completionEngine) { shell.snapshot() }
-        shell.host = self
+        bridge.session = self
     }
 
     deinit {
@@ -282,9 +293,7 @@ public final class ShellSession: ShellHost {
         // surface as EPIPE, never as a process killing SIGPIPE.
         ShellSession.ignoreSIGPIPE()
 
-        guard let pipe = FileDescriptorIO.makePipe() else { return }
-        outputRead = pipe.read
-        outputWrite = pipe.write
+        guard outputRead >= 0, outputWrite >= 0 else { return }
 
         let drain = Thread { [weak self] in self?.drainOutput() }
         drain.name = "tern.session.drain"
@@ -340,8 +349,11 @@ public final class ShellSession: ShellHost {
         let sinks = state.stdinSinks
         outputWrite = -1
         state.stdinSinks = [:]
+        let unusedRead = drainThread == nil ? outputRead : -1
+        outputRead = drainThread == nil ? -1 : outputRead
         lock.unlock()
         FileDescriptorIO.closeQuietly(write)
+        FileDescriptorIO.closeQuietly(unusedRead)
         for (read, write) in sinks {
             FileDescriptorIO.closeQuietly(read)
             if write >= 0 { FileDescriptorIO.closeQuietly(write) }
@@ -1019,6 +1031,33 @@ public final class ShellSession: ShellHost {
     Type a command name followed by --help for its options.
 
     """
+}
+
+/// Stands in for the session as the interpreter's host. The interpreter captures the terminal
+/// descriptors when it is created, before the session's own initializer has finished, so the bridge
+/// knows them up front and forwards everything else once `session` is set.
+final class SessionHostBridge: ShellHost {
+    weak var session: ShellSession?
+    private let outputDescriptor: Int32
+    private let initialSize: TerminalSize
+
+    init(outputDescriptor: Int32, initialSize: TerminalSize) {
+        self.outputDescriptor = outputDescriptor
+        self.initialSize = initialSize
+    }
+
+    var terminalSize: TerminalSize { session?.terminalSize ?? initialSize }
+    func readLine(prompt: String, secure: Bool) -> String? { session?.readLine(prompt: prompt, secure: secure) }
+    func openTerminalInput() -> Int32? { session?.openTerminalInput() }
+    func closeTerminalInput(_ fd: Int32) { session?.closeTerminalInput(fd) ?? FileDescriptorIO.closeQuietly(fd) }
+    var terminalOutput: Int32 { session?.terminalOutput ?? outputDescriptor }
+    var terminalError: Int32 { session?.terminalError ?? outputDescriptor }
+    func shellWillRun(externalCommand argv: [String]) { session?.shellWillRun(externalCommand: argv) }
+    func shellDidFinish(externalCommand argv: [String], status: Int32) { session?.shellDidFinish(externalCommand: argv, status: status) }
+    func shellDidRequestExit(status: Int32) { session?.shellDidRequestExit(status: status) }
+    func shellDidChangeDirectory(_ path: String) { session?.shellDidChangeDirectory(path) }
+    func runHostCommand(_ argv: [String], io: ShellIO) -> Int32? { session?.runHostCommand(argv, io: io) }
+    func hostCommandNames() -> [String] { session?.hostCommandNames() ?? [] }
 }
 
 /// Minimal line discipline used while an external command reads from the keyboard and for the
