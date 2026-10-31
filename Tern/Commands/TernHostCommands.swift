@@ -73,6 +73,12 @@ final class TernHostCommands: HostCommandProvider {
             io.writeOut(HelpText.about)
             return 0
         }
+        if arguments.first == "diagnostics" {
+            var report = ""
+            DispatchQueue.main.sync { report = model.diagnosticsReport() }
+            io.writeOut(report)
+            return 0
+        }
         var result = ""
         DispatchQueue.main.sync {
             result = model.settings.apply(command: arguments)

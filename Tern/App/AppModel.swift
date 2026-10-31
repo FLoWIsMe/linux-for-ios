@@ -152,6 +152,25 @@ final class AppModel {
         backgroundTask = .invalid
     }
 
+    /// Text for `tern diagnostics`: what is embedded, how the terminal is configured, useful in bug reports.
+    func diagnosticsReport() -> String {
+        var lines: [String] = []
+        lines.append("Tern \(SystemEnvironment.appVersion) (\(SystemEnvironment.buildNumber))")
+        lines.append("Appearance: \(settings.appearance.title), effective: \(colorScheme == .dark ? "dark" : "light")")
+        lines.append("Palette: \(settings.palette(for: colorScheme).name)")
+        if let selected {
+            let view = selected.terminalView
+            lines.append("Terminal: \(view.terminalDimensions.cols)x\(view.terminalDimensions.rows), font \(settings.font.title) \(Int(settings.fontSize))pt")
+            lines.append("Renderer: \(view.isUsingMetalRenderer ? "Metal" : "Core Graphics")")
+            lines.append("Native background: \(view.nativeBackgroundColor), layer: \(String(describing: view.layer.backgroundColor))")
+            lines.append("Native foreground: \(view.nativeForegroundColor)")
+            lines.append("Subviews: " + view.subviews.map { "\(type(of: $0))(bg: \(String(describing: $0.backgroundColor)), opaque: \($0.isOpaque))" }.joined(separator: ", "))
+        }
+        lines.append("Skipped frameworks: " + (SystemEnvironment.skippedFrameworks.isEmpty ? "none" : SystemEnvironment.skippedFrameworks.keys.sorted().joined(separator: ", ")))
+        lines.append("Home: \(SystemEnvironment.homeDirectory)")
+        return lines.joined(separator: "\n") + "\n"
+    }
+
     func completeOnboarding() {
         settings.hasCompletedOnboarding = true
         showsOnboarding = false
