@@ -275,7 +275,7 @@ extension Interpreter {
             let inList = ranges.contains { $0.contains(position) }
             return complement ? !inList : inList
         }
-        guard let lines = utilityInputLines(files, name: "cut", io: io) else { return 1 }
+        guard let lines = try utilityInputLines(files, name: "cut", io: io) else { return 1 }
         var output = ""
         for line in lines {
             switch mode {
@@ -304,13 +304,13 @@ extension Interpreter {
     // MARK: rev, tac
 
     private func utilityRev(_ args: [String], io: ShellIO) throws -> Int32 {
-        guard let lines = utilityInputLines(args.filter { $0 != "--" }, name: "rev", io: io) else { return 1 }
+        guard let lines = try utilityInputLines(args.filter { $0 != "--" }, name: "rev", io: io) else { return 1 }
         try write(lines.map { String($0.reversed()) + "\n" }.joined(), to: io.stdout)
         return 0
     }
 
     private func utilityTac(_ args: [String], io: ShellIO) throws -> Int32 {
-        guard let lines = utilityInputLines(args.filter { $0 != "--" }, name: "tac", io: io) else { return 1 }
+        guard let lines = try utilityInputLines(args.filter { $0 != "--" }, name: "tac", io: io) else { return 1 }
         try write(lines.reversed().map { $0 + "\n" }.joined(), to: io.stdout)
         return 0
     }
