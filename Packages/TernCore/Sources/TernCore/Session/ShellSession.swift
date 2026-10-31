@@ -779,6 +779,15 @@ public final class ShellSession: ShellHost {
         }
     }
 
+    /// Changes editor behaviour at runtime (Settings toggles). Takes effect on the next redraw.
+    public func updateEditorOptions(autosuggestions: Bool? = nil, syntaxHighlighting: Bool? = nil, promptStyle: PromptStyle? = nil, accentColor: RGBColor?? = nil) {
+        if let autosuggestions { editor.configuration.autosuggestions = autosuggestions }
+        if let syntaxHighlighting { editor.configuration.syntaxHighlighting = syntaxHighlighting }
+        if let promptStyle { promptRenderer.style = promptStyle }
+        if let accentColor { promptRenderer.accent = accentColor }
+        if editorActive { write(editor.resize(columns: editor.configuration.columns)) }
+    }
+
     /// Clears the screen and redraws the prompt (Ctrl-L / Cmd-K).
     public func clearScreen() {
         write(ANSI.clearScreen)
