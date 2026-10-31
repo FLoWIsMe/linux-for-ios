@@ -523,7 +523,12 @@ extension Interpreter {
                 continue
             }
             job.cancel()
-            executor.interruptRunningCommand()
+            // The job may be between commands; interrupt a few times so a command that starts right
+            // after the cancel flag is set still gets the signal.
+            for attempt in 0..<4 {
+                executor.interruptRunningCommand()
+                if job.wait(until: Date().addingTimeInterval(0.02 * Double(attempt + 1))) { break }
+            }
         }
         return status
     }
@@ -745,7 +750,8 @@ extension Interpreter {
         var readonlyFlag = name == "readonly"
         var print = false
         var functionMode = false
-        var local = name == "local"
+        // declare and typeset create locals when used inside a function, like bash.
+        var local = name == "local" || ((name == "declare" || name == "typeset") && !ctx.scopes.isEmpty)
         while let first = remaining.first, first.hasPrefix("-") || first.hasPrefix("+"), first.count > 1, first != "--" {
             let enable = first.hasPrefix("-")
             for flag in first.dropFirst() {
@@ -911,7 +917,14 @@ extension Interpreter {
             guard current.hasPrefix("-"), current.count > 1 else { return try done() }
             ctx.getoptsPosition = 1
         }
+        guard optind <= arguments.count else { return try done() }
         let current = Array(arguments[optind - 1])
+        guard ctx.getoptsPosition < current.count else {
+            // Stale position from a previous argument list: move on to the next argument.
+            ctx.getoptsPosition = 0
+            optind += 1
+            return try done()
+        }
         let option = current[ctx.getoptsPosition]
         ctx.getoptsPosition += 1
         let atEnd = ctx.getoptsPosition >= current.count

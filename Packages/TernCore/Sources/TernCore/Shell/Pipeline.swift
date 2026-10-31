@@ -140,7 +140,8 @@ extension Interpreter {
                 child.ctx.fdTable[0] = FDEntry(fd: devNull, isTerminal: false)
             }
         }
-        let job = jobs.add(command: "background job")
+        let job = jobs.add(command: Interpreter.describe(andOr))
+        child.job = job
         ctx.lastBackgroundJob = job.id
         _ = Interpreter.spawnWorker {
             let status = child.runIsolated { try child.execute(andOr) }
@@ -150,6 +151,21 @@ extension Interpreter {
             FileDescriptorIO.writeAll(errorDescriptor, "[\(job.id)] \(job.id)\n")
         }
         return 0
+    }
+
+    /// A short description of a list for `jobs`.
+    static func describe(_ andOr: AndOrList) -> String {
+        var names: [String] = []
+        for pipeline in [andOr.first] + andOr.rest.map({ $0.1 }) {
+            for stage in pipeline.stages {
+                if case .simple(let simple) = stage.command {
+                    names.append(simple.words.map(\.raw).joined(separator: " "))
+                } else {
+                    names.append("compound command")
+                }
+            }
+        }
+        return names.joined(separator: " | ")
     }
 
     private func openDevNull() throws -> Int32 {

@@ -344,6 +344,14 @@ public final class Shell {
             }
         } catch ControlFlow.interrupted {
             status = ExitStatus.interrupted
+            if let handler = interpreter.ctx.traps["INT"], !handler.isEmpty {
+                // The handler itself must be allowed to run after the interrupt.
+                stateLock.lock()
+                interrupted = false
+                stateLock.unlock()
+                interpreter.ctx.lastStatus = status
+                _ = try? interpreter.evaluateSource(handler)
+            }
         } catch ControlFlow.returnFromFunction(let code) {
             status = code
         } catch ControlFlow.breakLoop, ControlFlow.continueLoop {

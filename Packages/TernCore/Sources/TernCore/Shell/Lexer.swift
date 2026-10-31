@@ -82,6 +82,9 @@ final class Lexer {
     private(set) var pos: Int = 0
     private(set) var line: Int = 1
     private var lookahead: Token?
+    /// Inside `[[ ... ]]` parentheses and angle brackets that are glued to a word stay part of it
+    /// (`[[ $x == a(b) ]]`, regex groups); standing alone they remain operators.
+    var conditionalMode = false
 
     init(_ text: String) {
         source = Array(text.utf8)
@@ -190,6 +193,31 @@ final class Lexer {
         }
     }
 
+    /// Reads the right hand side of `=~` verbatim up to the next blank, so regex metacharacters such as
+    /// `(`, `|` and `)` need no quoting. Quotes are kept for the expansion phase.
+    func readConditionalPattern() throws -> Token {
+        lookahead = nil
+        skipBlanksAndComments()
+        let start = pos
+        let startLine = line
+        while pos < source.count {
+            let c = source[pos]
+            if c == UInt8(ascii: " ") || c == UInt8(ascii: "\t") || c == UInt8(ascii: "\n") || c == UInt8(ascii: "\r") { break }
+            switch c {
+            case UInt8(ascii: "\\"):
+                pos += min(2, source.count - pos)
+            case UInt8(ascii: "'"), UInt8(ascii: "\""):
+                try skipQuoted(quote: c)
+            case UInt8(ascii: "$"):
+                try skipDollar()
+            default:
+                pos += 1
+            }
+        }
+        if pos == start { return Token(kind: .eof, line: startLine, start: start) }
+        return Token(kind: .word(String(decoding: source[start..<pos], as: UTF8.self)), line: startLine, start: start)
+    }
+
     /// Everything from the current position to the end of the current line (used for diagnostics).
     func restOfLine(from offset: Int) -> String {
         var end = offset
@@ -285,7 +313,13 @@ final class Lexer {
         let start = pos
         while pos < source.count {
             let c = source[pos]
-            if isMetacharacter(c) { break }
+            if isMetacharacter(c) {
+                let gluedConditionalCharacter = conditionalMode && pos > start
+                    && (c == UInt8(ascii: "(") || c == UInt8(ascii: ")") || c == UInt8(ascii: "<") || c == UInt8(ascii: ">"))
+                if !gluedConditionalCharacter { break }
+                pos += 1
+                continue
+            }
             switch c {
             case UInt8(ascii: "\\"):
                 if pos + 1 < source.count {
