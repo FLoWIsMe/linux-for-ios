@@ -17,17 +17,23 @@ final class SettingsStore {
         let storedSize = defaults.double(forKey: Keys.fontSize)
         fontSize = storedSize > 0 ? storedSize : (UIDevice.current.userInterfaceIdiom == .pad ? 14 : 13)
         cursorShape = CursorShape(rawValue: defaults.string(forKey: Keys.cursorShape) ?? "") ?? .block
-        cursorBlinks = defaults.object(forKey: Keys.cursorBlinks) as? Bool ?? true
+        cursorBlinks = SettingsStore.bool(Keys.cursorBlinks, in: defaults, default: true)
         promptStyle = PromptStyle(rawValue: defaults.string(forKey: Keys.promptStyle) ?? "") ?? .tern
-        autosuggestions = defaults.object(forKey: Keys.autosuggestions) as? Bool ?? true
-        syntaxHighlighting = defaults.object(forKey: Keys.syntaxHighlighting) as? Bool ?? true
-        keyboardBarEnabled = defaults.object(forKey: Keys.keyboardBar) as? Bool ?? true
-        hapticKeys = defaults.object(forKey: Keys.hapticKeys) as? Bool ?? true
+        autosuggestions = SettingsStore.bool(Keys.autosuggestions, in: defaults, default: true)
+        syntaxHighlighting = SettingsStore.bool(Keys.syntaxHighlighting, in: defaults, default: true)
+        keyboardBarEnabled = SettingsStore.bool(Keys.keyboardBar, in: defaults, default: true)
+        hapticKeys = SettingsStore.bool(Keys.hapticKeys, in: defaults, default: true)
         bell = BellBehavior(rawValue: defaults.string(forKey: Keys.bell) ?? "") ?? .haptic
-        keepAwakeWhileRunning = defaults.object(forKey: Keys.keepAwake) as? Bool ?? true
-        optionAsMeta = defaults.object(forKey: Keys.optionAsMeta) as? Bool ?? true
+        keepAwakeWhileRunning = SettingsStore.bool(Keys.keepAwake, in: defaults, default: true)
+        optionAsMeta = SettingsStore.bool(Keys.optionAsMeta, in: defaults, default: true)
         hasCompletedOnboarding = defaults.bool(forKey: Keys.onboardingDone)
-        welcomeTips = defaults.object(forKey: Keys.welcomeTips) as? Bool ?? true
+        welcomeTips = SettingsStore.bool(Keys.welcomeTips, in: defaults, default: true)
+    }
+
+    /// Reads a Bool that may have been set as a real Bool or, from a launch argument such as
+    /// `-terminal.cursorBlinks NO`, as a string.
+    private static func bool(_ key: String, in defaults: UserDefaults, default fallback: Bool) -> Bool {
+        defaults.object(forKey: key) == nil ? fallback : defaults.bool(forKey: key)
     }
 
     var appearance: Appearance { didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) } }
