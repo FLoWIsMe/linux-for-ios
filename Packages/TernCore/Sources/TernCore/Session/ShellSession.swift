@@ -860,7 +860,7 @@ public final class ShellSession: ShellHost {
 
     static func directoryTitle(_ path: String, home: String) -> String {
         if path == home { return "~" }
-        let name = (path as NSString).lastPathComponent
+        let name = URL(fileURLWithPath: path).lastPathComponent
         return name.isEmpty ? "/" : name
     }
 

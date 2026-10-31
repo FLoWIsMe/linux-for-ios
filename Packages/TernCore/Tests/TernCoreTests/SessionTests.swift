@@ -373,7 +373,7 @@ final class SessionTests: XCTestCase {
         XCTAssertTrue(waitUntil { self.screen.hasSuffix("~ \u{276F} ") }, screen)
         type("cd work\r")
         XCTAssertTrue(waitUntil { self.screen.hasSuffix("~/work \u{276F} ") }, screen)
-        XCTAssertEqual(recorder.directories.last.map { ($0 as NSString).lastPathComponent }, "work")
+        XCTAssertEqual(recorder.directories.last.map { URL(fileURLWithPath: $0).lastPathComponent }, "work")
         XCTAssertEqual(recorder.titles.last, "work")
     }
 
