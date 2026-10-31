@@ -30,7 +30,7 @@ WORK="$ROOT/Toolchain/cache/src/ios_system"
 OUT="$ROOT/Toolchain/local"
 FRAMEWORKS="$ROOT/Toolchain/frameworks"
 TARGETS=(ssh_cmd ssh_cmdA ssh_agent)
-MIN_IOS="14.0"
+MIN_IOS="15.0"   # Xcode 27 refuses anything older
 
 for name in ios_system openssl libssh2; do
   [[ -d "$FRAMEWORKS/$name.xcframework" ]] || bash "$ROOT/scripts/fetch-toolchain.sh"
