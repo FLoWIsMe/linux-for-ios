@@ -1,0 +1,38 @@
+# Tern toolchain manifest.
+# Each line: <framework name>	<download url>	<sha256 of the zip>	<group>
+# Groups:
+#   core     Unix commands from the ios_system ecosystem (BSD licensed).
+#   network  Networking tools (ping, nslookup, dig, whois, nc, telnet, ifconfig).
+#   crypto   OpenSSL and libssh2, required by ssh, scp, sftp, curl and lg2.
+#   editor   vim and xxd.
+#   git      lg2, the libgit2 command line client (clone, pull, push, commit, ...).
+#   shell    dash, a real POSIX sh used for scripts. dashA and dashB allow nesting.
+#   lang     lua.
+#   tools    jq, bc, make.
+#
+# The ios_system framework itself is linked through Swift Package Manager
+# (Packages/TernToolchain/Package.swift) because the app calls its C API directly.
+# Everything below is loaded at runtime with dlopen by ios_system and only needs to be
+# embedded in Tern.app/Frameworks. scripts/fetch-toolchain.sh downloads and verifies
+# these archives; scripts/embed-toolchain.sh copies the right slice into the app.
+awk	https://github.com/holzschu/ios_system/releases/download/v3.0.6/awk.xcframework.zip	675d3b2e3b5ba60ae1a727528b2cf5e11eda262d404c1e9708dc7e061898df86	core
+curl_ios	https://github.com/holzschu/ios_system/releases/download/v3.0.6/curl_ios.xcframework.zip	f9a74e005115aad3b51dd8daa2fb4727eb8425018805d7dd2973e598af65f968	core
+files	https://github.com/holzschu/ios_system/releases/download/v3.0.6/files.xcframework.zip	5db63958f686cc79f107bafd0d50feff32fb2b64d0dd976478c5dd405f7600b0	core
+shell	https://github.com/holzschu/ios_system/releases/download/v3.0.6/shell.xcframework.zip	89da3b8bd7f83e42a2311aeac54c38acc7a2f9c2fc0d0d27f75897b393cdfec2	core
+ssh_cmd	https://github.com/holzschu/ios_system/releases/download/v3.0.6/ssh_cmd.xcframework.zip	fbe01fb1cf471cbdc4893ddd6e88ff1def7480cab40a6dfe3ea1626d4b35d8c4	core
+ssh_agent	https://github.com/holzschu/ios_system/releases/download/v3.0.6/ssh_agent.xcframework.zip	c5868579c712a09609d023a8b3695bd977a3ef7aadb1bbdef59ccaa1b334c029	core
+tar	https://github.com/holzschu/ios_system/releases/download/v3.0.6/tar.xcframework.zip	74146ae19720d3d885d181bce4be2b6b92f11d306a47aa07486bf0dd35fc8f68	core
+text	https://github.com/holzschu/ios_system/releases/download/v3.0.6/text.xcframework.zip	9eef16c23ddaa03d5f28ce2183737b1dbdcfb06e6dc46035a404d9e0f3828604	core
+network_ios	https://github.com/holzschu/network_ios/releases/download/v0.3/network_ios.xcframework.zip	9fe5f119b2d5568d2255e2540f36e76525bfbeaeda58f32f02592ca8d74f4178	network
+libssh2	https://github.com/holzschu/libssh2-apple/releases/download/v1.11.0/libssh2-dynamic.xcframework.zip	cacfe1789b197b727119f7e32f561eaf9acc27bf38cd19975b74fce107f868a6	crypto
+openssl	https://github.com/holzschu/openssl-apple/releases/download/v1.1.1w/openssl-dynamic.xcframework.zip	329e8317cf9bee8e138da5d032330a7a1bd2473cf44c9c083cb2f0636abb8b80	crypto
+vim	https://github.com/holzschu/vim/releases/download/ios_1.0/vim.xcframework.zip	02acb74bec3e6b4ba9c120873a19a770773e3c3e2d141365808a9342ddf41fe7	editor
+xxd	https://github.com/holzschu/vim/releases/download/ios_1.0/xxd.xcframework.zip	1c48b9f77310b71499a7bd76a16882405c8a81b55f56c7c7577ae2a0ce347ba6	editor
+lg2	https://github.com/holzschu/libgit2/releases/download/ios_1.0/lg2.xcframework.zip	7d205a771be8d120a80d2f7281135dfffd21a3713c86eb4f1957638f6b4b365e	git
+dash	https://github.com/holzschu/ios_system/releases/download/Auxiliary/dash.xcframework.zip	9a30ac6b3780dd68d2268d10467902214e32333e980c59090faa6099f0d250fc	shell
+dashA	https://github.com/holzschu/ios_system/releases/download/Auxiliary/dashA.xcframework.zip	a45eb647bf81caf0fd80dba704326842ce03668c60499488d387dce26cf30ee6	shell
+dashB	https://github.com/holzschu/ios_system/releases/download/Auxiliary/dashB.xcframework.zip	c0de9fdc7c9cc2386012a1dccdbb112cf4b15243699ffcf49c9dbc6d17163bce	shell
+lua_ios	https://github.com/holzschu/lua_ios/releases/download/1.0/lua_ios.xcframework.zip	0ccdab671f31c20daf8833452cc36598b49f84441851d7142b305443425bc527	lang
+jq	https://github.com/fprimex/jq/releases/download/ios/jq.xcframework.zip	d3c4486e5ed788995b0ad9586465d3407e463d90f4e91b843846cabfe21f297f	tools
+bc_ios	https://github.com/holzschu/bc/releases/download/v1.0/bc_ios.xcframework.zip	e3d72c562f726614e273efb06f6e63ccd23f9e38b14c468cf9febd4302df5fdd	tools
+make	https://github.com/holzschu/ios_system/releases/download/Auxiliary/make.xcframework.zip	6f9dca82bfdee1be8ad0ec1e52870bee6b3e309ac29f0995a6d5a41003c26d4f	tools

@@ -1,0 +1,39 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xcarchive
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/*/.build/
+Package.resolved.bak
+
+# Toolchain binaries are downloaded by scripts/fetch-toolchain.sh and are never committed.
+Toolchain/cache/
+Toolchain/frameworks/
+
+# Local signing configuration (team id, bundle id overrides). Commit Config/Shared.xcconfig only.
+Config/Local.xcconfig
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+fastlane/README.md
+
+# macOS
+.DS_Store
+*.swp
+
+# Generated screenshots and QA artifacts
+qa/output/
