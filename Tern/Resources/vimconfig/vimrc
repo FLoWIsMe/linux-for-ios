@@ -1,0 +1,42 @@
+" System vimrc for Tern. Read before ~/.vimrc, which can override anything here.
+" Vim finds this file because Tern sets $VIM to the folder that contains it.
+
+" Modern defaults: backspace everywhere, incremental search, wildmenu, mouse.
+source $VIMRUNTIME/defaults.vim
+
+" Let users keep plugins and colors in ~/.vim like on a desktop.
+set runtimepath^=~/.vim
+set runtimepath+=~/.vim/after
+
+" The terminal is xterm-256color with true color support.
+set termguicolors
+set background=dark
+
+" Phones have narrow screens; wrap long lines and show where we are.
+set wrap
+set linebreak
+set number
+set ruler
+set showcmd
+set laststatus=2
+
+" Touch friendly: tap to place the cursor, drag to select, scroll to move.
+set mouse=a
+
+" Save undo history and swap files inside the app, never next to the file.
+set directory=$TMPDIR
+set backupdir=$TMPDIR
+set undodir=$TMPDIR
+set viminfo+=n~/.viminfo
+
+" Sensible indentation for people who do not configure anything.
+set expandtab
+set shiftwidth=4
+set softtabstop=4
+set autoindent
+
+" Clipboard integration goes through the pbcopy and pbpaste commands.
+" Use :w !pbcopy to copy a selection, :r !pbpaste to paste.
+
+syntax on
+filetype plugin indent on

@@ -1,0 +1,8 @@
+// Shared build settings. Do not put secrets here.
+// Contributors: create Config/Local.xcconfig (git ignored) with your own values, for example:
+//   TERN_TEAM_ID = ABCDE12345
+//   TERN_BUNDLE_ID = com.example.tern
+TERN_BUNDLE_ID = com.daelyndoughty.tern
+TERN_TEAM_ID = 485J44YA77
+
+#include? "Local.xcconfig"

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#0B0F14"/>
+  <!-- Tern in flight: long swept wings, forked tail -->
+  <path fill="#E6EDF3" d="M 92 592 C 286 232 452 300 512 408 C 572 300 738 232 932 592 C 772 436 650 444 512 548 C 374 444 252 436 92 592 Z"/>
+  <path fill="#E6EDF3" d="M 478 522 L 490 652 L 512 572 L 534 652 L 546 522 Z"/>
+  <!-- Prompt cursor -->
+  <rect x="428" y="708" width="168" height="56" rx="12" fill="#FF6A2F"/>
+</svg>
