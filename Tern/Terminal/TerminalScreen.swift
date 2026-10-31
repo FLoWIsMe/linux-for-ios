@@ -22,7 +22,8 @@ struct TerminalScreen: View {
                         keyboardBar: model.keyboardBar,
                         showKeyboardBar: model.settings.keyboardBarEnabled,
                         compact: sizeClass == .compact,
-                        becomeFirstResponder: true
+                        // Keep the keyboard down while onboarding or a sheet covers the terminal.
+                        becomeFirstResponder: !model.showsOnboarding && model.presentedSheet == nil
                     )
                     .id(controller.id)
                     .background(palette.background.color)

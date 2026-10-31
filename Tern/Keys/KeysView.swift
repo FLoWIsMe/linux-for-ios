@@ -39,7 +39,7 @@ struct KeysView: View {
             .navigationTitle("SSH Keys")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() }.fontWeight(.semibold) }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.fontWeight(.semibold) }
             }
             .sheet(isPresented: $showingGenerate) {
                 GenerateKeyView(existingNames: keys.map(\.name)) { command in

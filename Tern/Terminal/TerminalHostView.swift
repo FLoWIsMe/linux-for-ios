@@ -40,6 +40,10 @@ struct TerminalHostView: UIViewRepresentable {
             DispatchQueue.main.async {
                 _ = terminalView.becomeFirstResponder()
             }
+        } else if !becomeFirstResponder && terminalView.isFirstResponder {
+            DispatchQueue.main.async {
+                _ = terminalView.resignFirstResponder()
+            }
         }
         container.onLayout = { [weak controller] in
             controller?.applyPaletteIfNeeded()

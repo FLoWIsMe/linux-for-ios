@@ -47,12 +47,13 @@ struct HostsView: View {
             .navigationTitle("Hosts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { dismiss() }.fontWeight(.semibold)
-                }
-                ToolbarItem(placement: .primaryAction) {
+                // Done sits trailing on every sheet; the add button takes the leading slot.
+                ToolbarItem(placement: .topBarLeading) {
                     Button { showingAdd = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("Add host")
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }.fontWeight(.semibold)
                 }
             }
             .sheet(isPresented: $showingAdd) {

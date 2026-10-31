@@ -93,6 +93,8 @@ final class TernUITests: XCTestCase {
         fresh.launch()
         XCTAssertTrue(fresh.buttons["Continue"].waitForExistence(timeout: 10))
         for page in 1...5 {
+            // Let the page transition finish before capturing it.
+            RunLoop.current.run(until: Date().addingTimeInterval(0.8))
             let attachment = XCTAttachment(screenshot: fresh.screenshot())
             attachment.name = "06-onboarding-\(page)"
             attachment.lifetime = .keepAlways
