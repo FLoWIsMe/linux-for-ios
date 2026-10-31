@@ -8,9 +8,12 @@ import Glibc
 /// Executes parsed programs against a `ShellContext`. One `Interpreter` exists per shell; subshells
 /// and pipeline stages get their own instance started from a copy of the context.
 final class Interpreter {
-    /// The owning shell. Weak because the shell owns the interpreter; children copy the reference.
+    /// The owning shell. The main interpreter holds it weakly because the shell owns the interpreter;
+    /// subshells, pipeline stages and background jobs hold it strongly so a job that outlives the UI's
+    /// reference still has a shell to report to.
     weak var shellRef: Shell?
-    var shell: Shell { shellRef! }
+    private var strongShellRef: Shell?
+    var shell: Shell { strongShellRef ?? shellRef! }
     var ctx: ShellContext
     let jobs: JobTable
     /// The background job this interpreter runs, if any; `kill` cancels it through this reference.
@@ -29,6 +32,7 @@ final class Interpreter {
         var copy = ctx
         copy.subshellDepth += 1
         let child = Interpreter(shell: shell, context: copy, jobs: jobs)
+        child.strongShellRef = shell
         child.job = job
         return child
     }
@@ -770,6 +774,7 @@ final class Interpreter {
         context.positional = arguments
         context.options = options
         let child = Interpreter(shell: shell, context: context, jobs: jobs)
+        child.strongShellRef = shell
         return child.runIsolated {
             let parser = Parser(source: source, aliasLookup: { child.ctx.aliases[$0] })
             var status: Int32 = 0

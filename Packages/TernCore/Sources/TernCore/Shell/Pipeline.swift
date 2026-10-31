@@ -156,7 +156,7 @@ extension Interpreter {
     /// A short description of a list for `jobs`.
     static func describe(_ andOr: AndOrList) -> String {
         var names: [String] = []
-        for pipeline in [andOr.first] + andOr.rest.map { $0.1 } {
+        for pipeline in [andOr.first] + andOr.rest.map({ $0.1 }) {
             for stage in pipeline.stages {
                 if case .simple(let simple) = stage.command {
                     names.append(simple.words.map(\.raw).joined(separator: " "))
