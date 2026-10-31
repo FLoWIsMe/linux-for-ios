@@ -50,6 +50,20 @@ public protocol HostCommandProvider: AnyObject {
     func runHostCommand(_ argv: [String], io: ShellIO, session: ShellSession) -> Int32?
 }
 
+/// A 24-bit color used for terminal accents.
+public struct RGBColor: Equatable, Codable, Sendable {
+    public var red: UInt8
+    public var green: UInt8
+    public var blue: UInt8
+    public init(red: UInt8, green: UInt8, blue: UInt8) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+    }
+    /// SGR parameters selecting this color as the foreground, without the leading `ESC[` or trailing `m`.
+    public var foregroundSGR: String { "38;2;\(red);\(green);\(blue)" }
+}
+
 /// How the prompt looks.
 public enum PromptStyle: String, CaseIterable, Codable, Sendable {
     /// `~/projects/tern main ❯ ` with the directory dimmed and the arrow in the accent color.
@@ -78,6 +92,11 @@ public struct ShellSessionConfiguration: Sendable {
     public var terminalSize: TerminalSize
     /// Maximum number of history entries kept.
     public var historyLimit: Int
+    /// 24-bit color for the prompt symbol and other accents. nil uses the terminal's ANSI yellow.
+    public var accentColor: RGBColor?
+    /// Name shown in the classic prompt (`user@host`). Defaults to `mobile@tern`.
+    public var userName: String
+    public var hostName: String
 
     public init(
         homeDirectory: String,
@@ -90,8 +109,14 @@ public struct ShellSessionConfiguration: Sendable {
         syntaxHighlighting: Bool = true,
         welcomeMessage: String? = nil,
         terminalSize: TerminalSize = .fallback,
-        historyLimit: Int = 5000
+        historyLimit: Int = 5000,
+        accentColor: RGBColor? = nil,
+        userName: String = "mobile",
+        hostName: String = "tern"
     ) {
+        self.accentColor = accentColor
+        self.userName = userName
+        self.hostName = hostName
         self.homeDirectory = homeDirectory
         self.workingDirectory = workingDirectory ?? homeDirectory
         self.environment = environment
