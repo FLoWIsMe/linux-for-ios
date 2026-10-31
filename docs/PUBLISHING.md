@@ -3,6 +3,12 @@
 This is the complete path from a clean checkout to a build on the App Store. Steps marked
 **(account owner)** need the Apple Developer account holder; everything else can be scripted.
 
+Status for 1.0.0 (October 31, 2026): the app record exists in App Store Connect (app id
+6829323678, team 485J44YA77), build 2 is processed and attached to version 1.0.0, the listing,
+screenshots, age rating, review notes, price (free) and availability (all territories) are set
+through the API, and the App Privacy answers ("no data collected") are saved. What remains is
+the account owner publishing the privacy answers and pressing Add for Review.
+
 ## One time setup
 
 1. **(account owner)** Create the app record in App Store Connect: My Apps > + > New App.
