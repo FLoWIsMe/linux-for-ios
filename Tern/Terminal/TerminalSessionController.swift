@@ -126,6 +126,9 @@ final class TerminalSessionController: NSObject, Identifiable {
         terminalView.caretColor = palette.cursor.uiColor
         terminalView.selectedTextBackgroundColor = palette.selection.uiColor
         terminalView.backgroundColor = palette.background.uiColor
+        // On iOS SwiftTerm paints the terminal background with the layer color; set it directly as well
+        // because the native color setter defers the layer update in some states (reverse video bookkeeping).
+        terminalView.layer.backgroundColor = palette.background.uiColor.cgColor
         terminalView.updateColorScheme(palette.isDark ? .dark : .light)
     }
 
