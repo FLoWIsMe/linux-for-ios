@@ -53,7 +53,7 @@ read_setting() {
   for file in Config/Shared.xcconfig Config/Local.xcconfig; do
     if [[ -f "$file" ]]; then
       local found
-      found="$(grep -E "^\s*$name\s*=" "$file" | tail -1 | sed -E 's/^[^=]*=\s*//' | sed -E 's/\s*(\/\/.*)?$//')"
+      found="$(grep -E "^[[:space:]]*$name[[:space:]]*=" "$file" | tail -1 | sed -E 's/^[^=]*=//' | sed -E 's|[[:space:]]*(//.*)?$||' | sed -E 's/^[[:space:]]*//')"
       [[ -n "$found" ]] && value="$found"
     fi
   done
