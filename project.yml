@@ -47,9 +47,6 @@ targets:
         type: folder
       - path: Tern/Resources/terminfo
         type: folder
-      - path: Toolchain/vimruntime/vim
-        type: folder
-        optional: true
     dependencies:
       - package: SwiftTerm
         product: SwiftTerm

@@ -45,6 +45,7 @@ def fail(message: str) -> None:
 def main() -> None:
     root = Path(__file__).resolve().parent.parent
     frameworks_src = root / "Toolchain" / "frameworks"
+    local_src = root / "Toolchain" / "local"
     manifest = root / "Toolchain" / "manifest.tsv"
 
     target_build_dir = env("TARGET_BUILD_DIR")
@@ -84,7 +85,10 @@ def main() -> None:
     skipped: dict[str, str] = {}
 
     for name in expected:
-        xcf = frameworks_src / f"{name}.xcframework"
+        # A locally built xcframework (scripts/build-vim.sh and friends) wins over the prebuilt one.
+        xcf = local_src / f"{name}.xcframework"
+        if not xcf.is_dir():
+            xcf = frameworks_src / f"{name}.xcframework"
         info = plistlib.loads((xcf / "Info.plist").read_bytes())
         chosen = None
         for lib in info.get("AvailableLibraries", []):
@@ -129,6 +133,7 @@ def main() -> None:
     if resources_folder:
         resources_dir = Path(target_build_dir) / resources_folder
         resources_dir.mkdir(parents=True, exist_ok=True)
+        copy_vim_runtime(root, local_src, resources_dir)
         summary = {
             "platform": platform_name,
             "architectures": archs,
@@ -140,6 +145,16 @@ def main() -> None:
     print(f"Embedded {len(embedded)} toolchain frameworks into {dest_dir}", flush=True)
     if skipped:
         print(f"Skipped: {', '.join(sorted(skipped))}", flush=True)
+
+
+def copy_vim_runtime(root: Path, local_src: Path, resources_dir: Path) -> None:
+    """Puts the Vim runtime that matches the embedded vim binary into Tern.app/vim."""
+    candidates = [local_src / "vim-runtime" / "vim", root / "Toolchain" / "vimruntime" / "vim"]
+    source = next((c for c in candidates if (c / "defaults.vim").is_file()), None)
+    if source is None:
+        warn("no Vim runtime found; run scripts/fetch-toolchain.sh (vim will start without syntax files)")
+        return
+    subprocess.run(["rsync", "-a", "--delete", f"{source}/", f"{resources_dir / 'vim'}/"], check=True)
 
 
 def thin_to_requested_archs(binary: Path, archs: list[str], available: set[str]) -> None:
