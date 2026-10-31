@@ -97,7 +97,8 @@ final class TerminalSessionController: NSObject, Identifiable {
 
     static func welcomeMessage(settings: SettingsStore) -> String? {
         guard settings.welcomeTips else { return nil }
-        return "Tern \(SystemEnvironment.appVersion). Type \u{1b}[1mhelp\u{1b}[0m for a tour, \u{1b}[1mtern\u{1b}[0m to change themes."
+        // Short enough for the narrowest phone at the largest default font without wrapping.
+        return "Tern \(SystemEnvironment.appVersion). Type \u{1b}[1mhelp\u{1b}[0m for a tour."
     }
 
     // MARK: Appearance
