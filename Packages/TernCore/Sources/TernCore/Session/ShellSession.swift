@@ -885,8 +885,35 @@ public final class ShellSession: ShellHost {
             state.currentStdinWrite = state.stdinSinks.values.first(where: { $0 >= 0 })
         }
         lock.unlock()
+        // Whatever the command left unread was typed ahead for the shell: keep it for the next prompt,
+        // the way a real tty's input queue survives the end of a foreground process.
+        let unread = ShellSession.drainWithoutBlocking(fd)
         FileDescriptorIO.closeQuietly(fd)
         if let write, write >= 0 { FileDescriptorIO.closeQuietly(write) }
+        if !unread.isEmpty {
+            DispatchQueue.main.async { [weak self] in
+                self?.typeahead.insert(contentsOf: unread, at: 0)
+            }
+        }
+    }
+
+    private static func drainWithoutBlocking(_ fd: Int32) -> [UInt8] {
+        let flags = fcntl(fd, F_GETFL)
+        guard flags >= 0, fcntl(fd, F_SETFL, flags | O_NONBLOCK) >= 0 else { return [] }
+        var result: [UInt8] = []
+        var buffer = [UInt8](repeating: 0, count: 4096)
+        while true {
+            let count = buffer.withUnsafeMutableBufferPointer { pointer -> Int in
+                #if canImport(Darwin)
+                return Darwin.read(fd, pointer.baseAddress!, pointer.count)
+                #else
+                return Glibc.read(fd, pointer.baseAddress!, pointer.count)
+                #endif
+            }
+            if count <= 0 { break }
+            result.append(contentsOf: buffer[0..<count])
+        }
+        return result
     }
 
     public var terminalOutput: Int32 {
@@ -924,6 +951,9 @@ public final class ShellSession: ShellHost {
         lock.unlock()
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            // Text typed but not yet submitted while the command ran belongs to the next prompt.
+            let partial = self.cooked.takeBuffer()
+            if !partial.isEmpty { self.typeahead.insert(contentsOf: Array(partial.utf8), at: 0) }
             self.delegate?.session(self, didFinishCommand: argv, status: status)
         }
         notifyMode(.prompt)
@@ -1010,6 +1040,13 @@ struct CookedLineBuffer {
         parser = KeyParser()
         buffer = []
         echoEnabled = echo
+    }
+
+    /// Returns and clears the text typed so far.
+    mutating func takeBuffer() -> String {
+        let text = String(buffer)
+        buffer = []
+        return text
     }
 
     mutating func feed(_ bytes: [UInt8]) -> Result {

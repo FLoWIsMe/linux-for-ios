@@ -311,7 +311,8 @@ public final class LineEditor {
             renderer.reset()
             return LineEditorOutput(text: ANSI.clearScreen + redraw(), event: .clearScreen)
         case .control("c"):
-            let output = finishLine() + "^C\r\n"
+            let output = moveToEndOfLine() + "^C\r\n"
+            renderer.reset()
             isActive = false
             return LineEditorOutput(text: output, event: .cancel)
         case .control("r"):
@@ -578,7 +579,8 @@ public final class LineEditor {
             return submit()
         case .control("c"):
             exitSearch(state, restoreOriginal: true)
-            let output = finishLine() + "^C\r\n"
+            let output = moveToEndOfLine() + "^C\r\n"
+            renderer.reset()
             isActive = false
             return LineEditorOutput(text: output, event: .cancel)
         case .control("g"), .escape:
@@ -686,10 +688,14 @@ public final class LineEditor {
     /// Moves the cursor past the end of the drawn text and emits a newline, so whatever comes next
     /// starts on a fresh row.
     private func finishLine() -> String {
-        var output = renderer.render(prompt: currentPrompt(), segments: segments(for: buffer), cursor: buffer.count, ghost: nil, columns: configuration.columns)
-        output += "\r\n"
+        let output = moveToEndOfLine() + "\r\n"
         renderer.reset()
         return output
+    }
+
+    /// Redraws the line without the ghost suggestion and leaves the cursor after its last character.
+    private func moveToEndOfLine() -> String {
+        renderer.render(prompt: currentPrompt(), segments: segments(for: buffer), cursor: buffer.count, ghost: nil, columns: configuration.columns)
     }
 
     private func segments(for shownText: [Character]) -> [StyledSegment] {
