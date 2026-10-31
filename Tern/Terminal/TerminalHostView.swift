@@ -34,6 +34,8 @@ struct TerminalHostView: UIViewRepresentable {
             if terminalView.isFirstResponder { terminalView.reloadInputViews() }
         }
 
+        // The view is not in a window during the first update; the container asks again once it is.
+        container.wantsFocus = becomeFirstResponder
         if becomeFirstResponder && !terminalView.isFirstResponder && terminalView.window != nil {
             DispatchQueue.main.async {
                 _ = terminalView.becomeFirstResponder()
@@ -54,7 +56,14 @@ final class TerminalContainerView: UIView {
     private weak var terminalView: TerminalView?
     /// Called after the first layout with a real size and whenever the view moves to a window.
     var onLayout: (() -> Void)?
+    /// Whether the terminal should take keyboard focus as soon as it is on screen.
+    var wantsFocus = false
     private var lastLayoutSize: CGSize = .zero
+
+    private func focusIfWanted() {
+        guard wantsFocus, let view = terminalView, view.window != nil, !view.isFirstResponder else { return }
+        _ = view.becomeFirstResponder()
+    }
 
     func attach(_ view: TerminalView) {
         guard view.superview !== self else { return }
@@ -79,14 +88,20 @@ final class TerminalContainerView: UIView {
         terminalView?.frame = bounds
         if bounds.size != lastLayoutSize, bounds.width > 0, window != nil {
             lastLayoutSize = bounds.size
-            DispatchQueue.main.async { [weak self] in self?.onLayout?() }
+            DispatchQueue.main.async { [weak self] in
+                self?.onLayout?()
+                self?.focusIfWanted()
+            }
         }
     }
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window != nil {
-            DispatchQueue.main.async { [weak self] in self?.onLayout?() }
+            DispatchQueue.main.async { [weak self] in
+                self?.onLayout?()
+                self?.focusIfWanted()
+            }
         }
     }
 }

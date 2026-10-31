@@ -53,6 +53,22 @@ This is the complete path from a clean checkout to a build on the App Store. Ste
    `fastlane/metadata/en-US/release_notes.txt`, keep the review notes from
    `fastlane/metadata/review_information/notes.txt`, and submit.
 
+## Toolchain binaries (optional)
+
+Every build downloads the prebuilt command frameworks listed in `Toolchain/manifest.tsv` and
+fixes their home directory paths while embedding them (see `docs/ARCHITECTURE.md`). Nothing
+has to be compiled. Two scripts build newer versions from source when wanted:
+
+* `scripts/build-ssh.sh` rebuilds ssh, scp, sftp, ssh-keygen and ssh-agent from the ios_system
+  sources in about a minute.
+* `scripts/build-vim.sh` builds Vim 8.2 with an Apple silicon Simulator slice (the prebuilt Vim
+  is 8.1 and has none) in about ten minutes.
+
+Both write to `Toolchain/local/`, which the embed step prefers over the downloads. The
+"Build toolchain" GitHub Actions workflow runs both on a macOS runner and attaches the results
+to a release; its log prints the manifest lines (URL and SHA-256) to paste into
+`Toolchain/manifest.tsv` if the project should start downloading them instead.
+
 ## Review notes
 
 Apps that run code have a history with App Review. Tern follows the model a-Shell has used on
