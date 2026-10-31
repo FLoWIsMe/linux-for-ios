@@ -53,6 +53,37 @@ final class ShellParseStateTests: XCTestCase {
         }
     }
 
+    /// Random programs must never crash or hang the interpreter. External commands are disabled by
+    /// giving the executor an empty PATH; each case is interrupted if it runs too long.
+    func testRunningGarbageNeverCrashes() {
+        let executor = ProcessCommandExecutor(path: "")
+        let directory = ShellTesting.makeTemporaryDirectory()
+        var generator = SystemRandomNumberGenerator()
+        let pieces = ["echo", "x", "$x", "${x:-y}", "$((1+", "))", "(", ")", "{", "}", ";", "|", "&&", "||", "&", "<", ">", ">>", "2>&1",
+                      "'", "\"", "`", "\\", "if", "then", "else", "fi", "for", "in", "do", "done", "while", "case", "esac", "!", "[[", "]]",
+                      "[", "]", "-n", "=", "==", "=~", "*", "?", "~", "{a,b}", "{1..3}", "\n", " ", "$(", "$@", "\"$@\"", "set", "--", "-e",
+                      "local", "return", "break", "continue", "exit", "read", "printf", "%s", "%d", "test", "cd", "..", "export", "unset", "eval",
+                      "f()", "shift", "$1", "$#", "<<EOF", "EOF", "<<<", "alias", "a=b", "trap", "EXIT", "wait", "jobs", "kill", "%1", "0", "1", "-1"]
+        for _ in 0..<150 {
+            let length = Int.random(in: 1...14, using: &generator)
+            let source = (0..<length).map { _ in pieces.randomElement(using: &generator)! }.joined(separator: " ")
+            let host = TestHost()
+            let shell = Shell(executor: executor, host: host, environment: ["PATH": ""], workingDirectory: directory, homeDirectory: directory)
+            shell.isInteractive = false
+            let done = expectation(description: source)
+            Thread.detachNewThread {
+                _ = shell.run(source)
+                done.fulfill()
+            }
+            let waiter = XCTWaiter()
+            if waiter.wait(for: [done], timeout: 1.0) != .completed {
+                shell.interrupt()
+                XCTAssertEqual(waiter.wait(for: [done], timeout: 2.0), .completed, "hung on: \(source)")
+            }
+            _ = host.finish()
+        }
+    }
+
     func testLineNumbersInDiagnostics() {
         let result = ShellTesting.run("echo one\necho two\nnonexistent_cmd_xyz\necho four")
         XCTAssertEqual(result.stdout, "one\ntwo\nfour\n")

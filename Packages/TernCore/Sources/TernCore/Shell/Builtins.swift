@@ -917,7 +917,14 @@ extension Interpreter {
             guard current.hasPrefix("-"), current.count > 1 else { return try done() }
             ctx.getoptsPosition = 1
         }
+        guard optind <= arguments.count else { return try done() }
         let current = Array(arguments[optind - 1])
+        guard ctx.getoptsPosition < current.count else {
+            // Stale position from a previous argument list: move on to the next argument.
+            ctx.getoptsPosition = 0
+            optind += 1
+            return try done()
+        }
         let option = current[ctx.getoptsPosition]
         ctx.getoptsPosition += 1
         let atEnd = ctx.getoptsPosition >= current.count

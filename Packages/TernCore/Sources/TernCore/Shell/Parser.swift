@@ -290,8 +290,15 @@ final class Parser {
 
     // MARK: Commands
 
+    private var nestingDepth = 0
+
     private func parseCommand() throws -> Command {
         activeAliases.removeAll()
+        nestingDepth += 1
+        defer { nestingDepth -= 1 }
+        if nestingDepth > 200 {
+            throw ParseError.syntax(message: "syntax error: commands are nested too deeply", line: try peek().line)
+        }
         return try parseCommandAfterAliases()
     }
 
