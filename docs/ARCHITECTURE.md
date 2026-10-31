@@ -92,6 +92,14 @@ forwards them to `ShellSession.setRawInput`.
 * `TerminalScreen` hosts a SwiftTerm `TerminalView` per session and the custom keyboard bar.
 * Everything the user sees is themed through `Theme`: a light and a dark variant for the chrome
   plus a set of 16 ANSI colors, background, foreground and cursor color for the terminal.
+* Home is the Documents folder. `$HOME`, `~`, the Files app and the prompt's `~` all mean the
+  same directory, and dotfiles (`.ternrc`, `.vimrc`, `.ssh`, `.gitconfig`) live in it where the
+  user can see them. The a-Shell ecosystem assumes the opposite (HOME at the sandbox root,
+  files in `$HOME/Documents`), and the prebuilt vim, lg2 and OpenSSH binaries bake
+  `Documents/` into their default paths. `scripts/embed-toolchain.py` rewrites those string
+  constants in place when it copies the frameworks (shorter strings, NUL padded, only in the
+  `__TEXT` string sections), and `scripts/build-ssh.sh` / `scripts/build-vim.sh` make the same
+  change at source level for frameworks built locally.
 * `TernSupport` uses dyld interposing to answer `getpwuid`/`getpwnam` with a synthesized
   `mobile` user whenever the system user database cannot resolve the process user. ssh, scp,
   sftp, ssh-keygen and whoami all start with that lookup and refuse to run without it; devices

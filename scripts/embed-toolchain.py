@@ -121,6 +121,8 @@ def main() -> None:
 
         binary = framework_dst / framework_name.replace(".framework", "")
         thin_to_requested_archs(binary, archs, set(chosen.get("SupportedArchitectures", [])))
+        if name in HOME_RELATIVE_FRAMEWORKS:
+            retarget_home_paths(binary, name)
 
         if sign_allowed and identity:
             cmd = ["codesign", "--force", "--sign", identity]
@@ -155,6 +157,101 @@ def copy_vim_runtime(root: Path, local_src: Path, resources_dir: Path) -> None:
         warn("no Vim runtime found; run scripts/fetch-toolchain.sh (vim will start without syntax files)")
         return
     subprocess.run(["rsync", "-a", "--delete", f"{source}/", f"{resources_dir / 'vim'}/"], check=True)
+
+
+# Frameworks from the a-Shell ecosystem keep user files in $HOME/Documents, because a-Shell's HOME
+# is the sandbox root. Tern's HOME is the Documents folder itself (what the Files app shows), so
+# ~/.ssh, ~/.vimrc and ~/.gitconfig mean what they mean everywhere else. The string constants in
+# these binaries are rewritten accordingly: "~/Documents/.ssh" -> "~/.ssh", "$HOME/Documents/.vimrc"
+# -> "$HOME/.vimrc", "Documents/.gitconfig" -> ".gitconfig". Every rewrite is shorter than the
+# original and stays in place, NUL padded, so no offset in the binary moves. Only the string
+# literal and read-only constant sections of the __TEXT segment are touched, and only runs of
+# printable text in them. scripts/build-ssh.sh fixes the same paths in the OpenSSH sources; this
+# step covers the prebuilt archives and is a no-op on binaries that are already right.
+HOME_RELATIVE_FRAMEWORKS = {"ssh_cmd", "ssh_cmdA", "ssh_agent", "vim", "lg2"}
+
+MH_MAGIC_64 = 0xFEEDFACF
+FAT_MAGIC = 0xCAFEBABE
+LC_SEGMENT_64 = 0x19
+S_CSTRING_LITERALS = 0x2
+
+
+def string_sections(data: bytes) -> list[tuple[int, int]]:
+    """Returns (offset, size) of the __TEXT string and constant sections of a thin or fat Mach-O
+    file: __cstring holds literals, __const holds constant arrays such as OpenSSH's default
+    identity file list (NUL terminated strings referenced through pointers)."""
+    import struct
+
+    def thin(base: int) -> list[tuple[int, int]]:
+        magic = struct.unpack_from("<I", data, base)[0]
+        if magic != MH_MAGIC_64:
+            return []
+        ncmds = struct.unpack_from("<I", data, base + 16)[0]
+        cursor = base + 32
+        found = []
+        for _ in range(ncmds):
+            cmd, cmdsize = struct.unpack_from("<II", data, cursor)
+            if cmd == LC_SEGMENT_64:
+                segname = data[cursor + 8:cursor + 24].rstrip(b"\0")
+                nsects = struct.unpack_from("<I", data, cursor + 64)[0]
+                section = cursor + 72
+                for _ in range(nsects):
+                    sectname = data[section:section + 16].rstrip(b"\0")
+                    size = struct.unpack_from("<Q", data, section + 40)[0]
+                    offset, _align, _reloff, _nreloc, flags = struct.unpack_from("<IIIII", data, section + 48)
+                    wanted = flags & 0xFF == S_CSTRING_LITERALS or (segname == b"__TEXT" and sectname == b"__const")
+                    if wanted and size:
+                        found.append((base + offset, size))
+                    section += 80
+            cursor += cmdsize
+        return found
+
+    magic = struct.unpack_from(">I", data, 0)[0]
+    if magic == FAT_MAGIC:
+        count = struct.unpack_from(">I", data, 4)[0]
+        sections = []
+        for index in range(count):
+            offset = struct.unpack_from(">I", data, 8 + index * 20 + 8)[0]
+            sections.extend(thin(offset))
+        return sections
+    return thin(0)
+
+
+def retarget_home_paths(binary: Path, name: str) -> None:
+    if not binary.is_file():
+        return
+    data = bytearray(binary.read_bytes())
+    rewritten = []
+    for offset, size in string_sections(bytes(data)):
+        start = offset
+        end = offset + size
+        while start < end:
+            stop = data.find(b"\0", start, end)
+            if stop < 0:
+                stop = end
+            original = bytes(data[start:stop])
+            if b"Documents" in original and len(original) < 512 and all(0x20 <= byte < 0x7F or byte in b"\n\r\t" for byte in original):
+                updated = (
+                    original.replace(b"~/Documents/", b"~/")
+                    .replace(b"~/Documents", b"~")
+                    .replace(b"$HOME/Documents/", b"$HOME/")
+                    .replace(b"Documents/", b"")
+                )
+                if updated != original:
+                    if len(updated) > len(original):
+                        fail(f"{name}: rewritten path grew ({original!r} -> {updated!r})")
+                    data[start:stop] = updated.ljust(len(original), b"\0")
+                    rewritten.append((original, updated))
+            start = stop + 1
+    if not rewritten:
+        return
+    binary.write_bytes(bytes(data))
+    for original, updated in rewritten:
+        print(f"  {name}: {original.decode(errors='replace')!r} -> {updated.decode(errors='replace')!r}", flush=True)
+    if b"Documents/." in bytes(data):
+        fail(f"{name}: a Documents/. path survived outside the patched sections")
+    if shutil.which("codesign"):
+        subprocess.run(["codesign", "--force", "--sign", "-", str(binary)], check=False, capture_output=True)
 
 
 def thin_to_requested_archs(binary: Path, archs: list[str], available: set[str]) -> None:

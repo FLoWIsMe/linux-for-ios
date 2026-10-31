@@ -46,6 +46,20 @@ MIN_IOS="14.0"
 # ios_error.h is included by the port; take the header that matches the ios_system release in use.
 curl -sSL -o src/ios_error.h https://github.com/holzschu/ios_system/releases/download/v3.0.6/ios_error.h
 
+# The port keeps the user's files in $HOME/Documents (a-Shell's HOME is the sandbox root). Tern's
+# HOME is the Documents folder itself, so ~/.vimrc, ~/.vim and ~/.viminfo live directly in it.
+python3 - "$WORK/src/os_unix.h" <<'EOF2'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+updated = text.replace("$HOME/Documents/", "$HOME/").replace("~/Documents/", "~/").replace("~/Documents", "~")
+if updated != text:
+    path.write_text(updated)
+    print("patched src/os_unix.h: user files live in $HOME, not $HOME/Documents")
+if "Documents" in updated:
+    sys.exit("src/os_unix.h still mentions Documents")
+EOF2
+
 build_slice() {
   local platform="$1"      # iphoneos | iphonesimulator
   local sdk="$2"
