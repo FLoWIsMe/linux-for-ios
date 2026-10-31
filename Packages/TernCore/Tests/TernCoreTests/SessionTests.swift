@@ -78,7 +78,9 @@ struct ScreenModel {
             case "\r":
                 col = 0
             case "\n", "\r\n":
-                if c == "\r\n" { col = 0 }
+                // The app runs SwiftTerm with convertEol enabled, so a bare line feed also returns the
+                // carriage (command output uses plain "\n").
+                col = 0
                 row += 1
                 if row >= lines.count { lines.append([]) }
             case "\u{8}":
