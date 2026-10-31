@@ -6,7 +6,7 @@ binaries from the projects below, downloaded by `scripts/fetch-toolchain.sh` fro
 Where a license requires it, the corresponding source is available from the linked upstream
 repositories, which contain the exact revisions used to build these binaries.
 
-## ios_system (and its awk, curl_ios, files, shell, ssh_cmd, ssh_agent, tar, text frameworks)
+## ios_system (and its awk, curl_ios, files, shell, ssh_cmd, ssh_cmdA, ssh_agent, tar, text frameworks)
 
 Copyright (c) 2017 Nicolas Holzschuch. BSD 3-Clause License.
 https://github.com/holzschu/ios_system

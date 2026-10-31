@@ -1,7 +1,8 @@
 # Tern toolchain manifest.
 # Each line: <framework name>	<download url>	<sha256 of the zip>	<group>
 # Groups:
-#   core     Unix commands from the ios_system ecosystem (BSD licensed).
+#   core     Unix commands from the ios_system ecosystem (BSD licensed). ssh_cmdA is a second
+#            copy of ssh_cmd so two ssh sessions can run at once (ios_system picks the free one).
 #   network  Networking tools (ping, nslookup, dig, whois, nc, telnet, ifconfig).
 #   crypto   OpenSSL and libssh2, required by ssh, scp, sftp, curl and lg2.
 #   editor   vim and xxd.
@@ -22,6 +23,7 @@ curl_ios	https://github.com/holzschu/ios_system/releases/download/v3.0.6/curl_io
 files	https://github.com/holzschu/ios_system/releases/download/v3.0.6/files.xcframework.zip	5db63958f686cc79f107bafd0d50feff32fb2b64d0dd976478c5dd405f7600b0	core
 shell	https://github.com/holzschu/ios_system/releases/download/v3.0.6/shell.xcframework.zip	89da3b8bd7f83e42a2311aeac54c38acc7a2f9c2fc0d0d27f75897b393cdfec2	core
 ssh_cmd	https://github.com/holzschu/ios_system/releases/download/v3.0.6/ssh_cmd.xcframework.zip	fbe01fb1cf471cbdc4893ddd6e88ff1def7480cab40a6dfe3ea1626d4b35d8c4	core
+ssh_cmdA	https://github.com/holzschu/ios_system/releases/download/v3.0.6/ssh_cmdA.xcframework.zip	ae90f138db5bdd8943499e6217a0286834d9c844ea0e9e8289f09b00bd438409	core
 ssh_agent	https://github.com/holzschu/ios_system/releases/download/v3.0.6/ssh_agent.xcframework.zip	c5868579c712a09609d023a8b3695bd977a3ef7aadb1bbdef59ccaa1b334c029	core
 tar	https://github.com/holzschu/ios_system/releases/download/v3.0.6/tar.xcframework.zip	74146ae19720d3d885d181bce4be2b6b92f11d306a47aa07486bf0dd35fc8f68	core
 text	https://github.com/holzschu/ios_system/releases/download/v3.0.6/text.xcframework.zip	9eef16c23ddaa03d5f28ce2183737b1dbdcfb06e6dc46035a404d9e0f3828604	core

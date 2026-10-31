@@ -31,6 +31,7 @@ what makes the app fast, offline capable and acceptable to App Review.
 | `scripts/fetch-toolchain.sh` | Downloads and verifies the frameworks into `Toolchain/frameworks` (git ignored). |
 | `scripts/embed-toolchain.py` | Xcode build phase: copies the right slice of each framework into `Tern.app/Frameworks` and signs it. |
 | `Tern/` | The iOS app. |
+| `Support/TernSupport` | A tiny C framework the app links, so it loads before any toolchain framework. It carries launch-time shims the tools need from the OS (see below). |
 | `project.yml` | XcodeGen spec that produces `Tern.xcodeproj`. |
 
 ## TernCore
@@ -91,6 +92,11 @@ forwards them to `ShellSession.setRawInput`.
 * `TerminalScreen` hosts a SwiftTerm `TerminalView` per session and the custom keyboard bar.
 * Everything the user sees is themed through `Theme`: a light and a dark variant for the chrome
   plus a set of 16 ANSI colors, background, foreground and cursor color for the terminal.
+* `TernSupport` uses dyld interposing to answer `getpwuid`/`getpwnam` with a synthesized
+  `mobile` user whenever the system user database cannot resolve the process user. ssh, scp,
+  sftp, ssh-keygen and whoami all start with that lookup and refuse to run without it; devices
+  have `/etc/passwd`, the Simulator does not. The shim tries the system first and only fills in
+  for the current uid, so a real entry always wins.
 
 ## Threading summary
 
