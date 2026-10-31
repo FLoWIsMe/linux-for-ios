@@ -1,0 +1,1 @@
+SSH, git, vim and a real shell

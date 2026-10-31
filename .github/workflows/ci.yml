@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-linux:
+    name: TernCore tests (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        working-directory: Packages/TernCore
+        run: swift test --parallel 2>&1 | tail -50
+
+  core-macos:
+    name: TernCore tests (macOS)
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Run tests
+        working-directory: Packages/TernCore
+        run: swift test --parallel 2>&1 | tail -50
+
+  app:
+    name: Build app and run unit tests (Simulator)
+    runs-on: macos-26
+    needs: core-macos
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Cache toolchain downloads
+        uses: actions/cache@v4
+        with:
+          path: Toolchain/cache
+          key: toolchain-${{ hashFiles('Toolchain/manifest.tsv', 'scripts/fetch-toolchain.sh') }}
+      - name: Fetch toolchain
+        run: bash scripts/fetch-toolchain.sh
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Build and test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -skipPackagePluginValidation -skipMacroValidation \
+            -project Tern.xcodeproj -scheme Tern \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -only-testing:TernTests \
+            CODE_SIGNING_ALLOWED=NO \
+            | tail -80

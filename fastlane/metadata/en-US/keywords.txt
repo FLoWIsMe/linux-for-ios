@@ -1,0 +1,1 @@
+terminal,ssh,shell,linux,unix,git,vim,command line,bash,scp,sftp,developer,server,console

@@ -1,0 +1,22 @@
+Tern is a real Unix terminal for iPhone and iPad. It runs genuine command line programs on your device: ssh, scp, sftp, git (through libgit2), vim, curl, tar, grep, sed, awk, find, jq, lua, make and about a hundred more. Nothing is emulated and nothing leaves your phone unless you connect somewhere. It works offline and starts instantly.
+
+A SHELL THAT FEELS LIKE HOME
+Tern's shell understands the POSIX syntax you already know plus the bash features people actually use: pipelines, redirection, if, for, while, case, functions, $(...), $((...)), globbing, heredocs, [[ ]] and brace expansion. Scripts run with a real dash.
+
+MADE FOR A PHONE KEYBOARD
+A bar above the keyboard adds esc, tab, ctrl, alt, arrows and the symbols a shell needs. Modifiers latch, arrows repeat when held, and hardware keyboards get every shortcut: Cmd-T for a new tab, Cmd-K to clear, Cmd-1 to 9 to switch tabs.
+
+EDITING THAT HELPS
+Tab completion with candidate lists. Ctrl-R history search. Grey inline suggestions from your history, accepted with the right arrow. Syntax highlighting as you type. The git branch in your prompt.
+
+SSH WITHOUT FRICTION
+Generate a key with one tap, copy the public half, add hosts to ~/.ssh/config from a visual list and connect in one tap. Password logins work too.
+
+YOUR FILES, IN FILES
+Home is the app's Documents folder. It appears in the Files app, so you can drop files in, edit them with vim, and sync repositories with git.
+
+LIGHT AND DARK, PROPERLY
+Eleven terminal palettes including Solarized, Dracula, Nord, Gruvbox, One Dark and Catppuccin. Three fonts. A chrome that follows the system or your choice.
+
+PRIVATE BY DESIGN
+No account, no analytics, no tracking, no network use except the commands you run. Tern is free and open source under the MIT license.

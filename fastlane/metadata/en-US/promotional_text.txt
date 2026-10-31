@@ -1,0 +1,1 @@
+Free and open source. A real Unix terminal with ssh, git, vim, curl and a shell that completes, suggests and highlights as you type.

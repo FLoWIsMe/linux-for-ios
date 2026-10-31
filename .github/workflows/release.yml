@@ -1,0 +1,47 @@
+name: Release to TestFlight
+
+# Manual workflow: archives a Release build on a macOS runner and uploads it to App Store Connect.
+# Required repository secrets:
+#   ASC_KEY_ID        App Store Connect API key id (for example 6HL2MAL9S8)
+#   ASC_ISSUER_ID     Issuer id from the App Store Connect "Integrations" page
+#   ASC_KEY_P8        Contents of the AuthKey_XXXX.p8 file
+# Signing uses Xcode cloud managed certificates through the API key, so no certificate or
+# provisioning profile secrets are needed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number (CURRENT_PROJECT_VERSION). Leave empty to use the run number."
+        required: false
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Cache toolchain downloads
+        uses: actions/cache@v4
+        with:
+          path: Toolchain/cache
+          key: toolchain-${{ hashFiles('Toolchain/manifest.tsv', 'scripts/fetch-toolchain.sh') }}
+      - name: Fetch toolchain
+        run: bash scripts/fetch-toolchain.sh
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Install API key
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "${{ secrets.ASC_KEY_P8 }}" > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+      - name: Archive and upload
+        env:
+          BUILD_NUMBER: ${{ github.event.inputs.build_number || github.run_number }}
+        run: |
+          bash scripts/release.sh \
+            --key-id "${{ secrets.ASC_KEY_ID }}" \
+            --issuer-id "${{ secrets.ASC_ISSUER_ID }}" \
+            --build-number "$BUILD_NUMBER"
