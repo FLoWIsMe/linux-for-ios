@@ -23,7 +23,8 @@ done
 WORK="$ROOT/Toolchain/cache/src/vim"
 OUT="$ROOT/Toolchain/local"
 IOS_SYSTEM="$ROOT/Toolchain/frameworks/ios_system.xcframework"
-[[ -d "$IOS_SYSTEM" ]] || bash "$ROOT/scripts/fetch-toolchain.sh"
+LUA="$ROOT/Toolchain/frameworks/lua_ios.xcframework"
+[[ -d "$IOS_SYSTEM" && -d "$LUA" ]] || bash "$ROOT/scripts/fetch-toolchain.sh"
 
 mkdir -p "$(dirname "$WORK")" "$OUT"
 if [[ ! -d "$WORK/.git" ]]; then
@@ -50,10 +51,13 @@ build_slice() {
     minflag="-miphoneos-version-min=$MIN_IOS"
     rm -rf "$frameworks_dir"; mkdir -p "$frameworks_dir"
     cp -R "$IOS_SYSTEM/ios-arm64/ios_system.framework" "$frameworks_dir/"
+    # The port's configure links lua_ios unconditionally.
+    cp -R "$LUA/ios-arm64/lua_ios.framework" "$frameworks_dir/"
   else
     minflag="-mios-simulator-version-min=$MIN_IOS"
     rm -rf "$frameworks_dir"; mkdir -p "$frameworks_dir"
     cp -R "$IOS_SYSTEM/ios-arm64_x86_64-simulator/ios_system.framework" "$frameworks_dir/"
+    cp -R "$LUA/ios-arm64_x86_64-simulator/lua_ios.framework" "$frameworks_dir/"
   fi
   rm -f Frameworks
   ln -s "$frameworks_dir" Frameworks
