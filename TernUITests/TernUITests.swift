@@ -9,7 +9,8 @@ final class TernUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments = ["-onboarding.completed", "YES", "-shell.welcomeTips", "YES", "-ui-testing"]
+        // A blinking cursor never lets XCUITest consider the app idle, so every tap would wait 60 s.
+        app.launchArguments = ["-onboarding.completed", "YES", "-shell.welcomeTips", "YES", "-terminal.cursorBlinks", "NO", "-ui-testing"]
         app.launch()
     }
 
@@ -87,7 +88,7 @@ final class TernUITests: XCTestCase {
 
     func testOnboardingShowsWhenNotCompleted() {
         let fresh = XCUIApplication()
-        fresh.launchArguments = ["-onboarding.completed", "NO", "-ui-testing"]
+        fresh.launchArguments = ["-onboarding.completed", "NO", "-terminal.cursorBlinks", "NO", "-ui-testing"]
         fresh.launch()
         XCTAssertTrue(fresh.buttons["Continue"].waitForExistence(timeout: 10))
         for page in 1...5 {
