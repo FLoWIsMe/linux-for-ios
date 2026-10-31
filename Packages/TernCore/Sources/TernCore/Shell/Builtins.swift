@@ -745,7 +745,8 @@ extension Interpreter {
         var readonlyFlag = name == "readonly"
         var print = false
         var functionMode = false
-        var local = name == "local"
+        // declare and typeset create locals when used inside a function, like bash.
+        var local = name == "local" || ((name == "declare" || name == "typeset") && !ctx.scopes.isEmpty)
         while let first = remaining.first, first.hasPrefix("-") || first.hasPrefix("+"), first.count > 1, first != "--" {
             let enable = first.hasPrefix("-")
             for flag in first.dropFirst() {

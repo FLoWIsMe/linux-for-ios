@@ -51,11 +51,11 @@ final class ShellControlFlowTests: XCTestCase {
                 [0-9]) echo digit ;;
                 [a-z]*) echo lower ;;
                 *.txt|*.md) echo doc ;;
-                "quoted string") echo quoted ;;
+                "Hello There") echo quoted ;;
                 *) echo other ;;
             esac
         }
-        classify 7; classify abc; classify README.md; classify "quoted string"; classify ZZZ
+        classify 7; classify abc; classify README.md; classify "Hello There"; classify ZZZ
         """
         assertShell(script, prints: "digit\nlower\ndoc\nquoted\nother\n")
         assertShell("case x in x) echo one;& y) echo two;; z) echo three;; esac", prints: "one\ntwo\n")
@@ -128,7 +128,7 @@ final class ShellControlFlowTests: XCTestCase {
 
     func testTraps() {
         assertShell("trap 'echo bye' EXIT; echo hi; exit 0", prints: "hi\nbye\n")
-        assertShell("trap 'echo cleanup $?' EXIT; false; exit", prints: "cleanup 1\n")
+        assertShell("trap 'echo cleanup $?' EXIT; false; exit", prints: "cleanup 1\n", status: 1)
         assertShell("trap 'echo a' EXIT; trap - EXIT; exit 0", prints: "")
         assertShell("trap 'echo x' INT; trap", prints: "trap -- 'echo x' INT\n")
     }
@@ -144,7 +144,7 @@ final class ShellControlFlowTests: XCTestCase {
         assertShell("eval 'x=5; y=$((x + 1))'; echo $y", prints: "6\n")
         let directory = ShellTesting.makeTemporaryDirectory()
         try "value=sourced\nsay() { echo \"$value $1\"; }\necho args: $@\nreturn 3\necho not reached\n".write(toFile: directory + "/lib.sh", atomically: true, encoding: .utf8)
-        assertShell("source lib.sh one two; echo $?; say hello; . ./lib.sh", prints: "args: one two\n3\nsourced hello\nargs:\n", workingDirectory: directory)
+        assertShell("source lib.sh one two; echo $?; say hello; . ./lib.sh", prints: "args: one two\n3\nsourced hello\nargs:\n", status: 3, workingDirectory: directory)
         let missing = ShellTesting.run("source nope.sh; echo $?")
         XCTAssertEqual(missing.stdout, "1\n")
         XCTAssertTrue(missing.stderr.contains("nope.sh"))

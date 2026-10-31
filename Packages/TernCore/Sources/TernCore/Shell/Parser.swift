@@ -48,9 +48,21 @@ final class Parser {
 
     // MARK: Token access
 
+    /// Runs a lexer operation, converting lexer errors into parse errors.
+    private func lex<T>(_ body: () throws -> T) throws -> T {
+        do {
+            return try body()
+        } catch let error as LexError {
+            switch error {
+            case .incomplete(let hint, let line): throw ParseError.incomplete(hint: hint, line: line)
+            case .invalid(let message, let line): throw ParseError.syntax(message: message, line: line)
+            }
+        }
+    }
+
     private func peek(_ offset: Int = 0) throws -> Token {
         while buffer.count <= offset {
-            buffer.append(try lexer.next())
+            buffer.append(try lex { try lexer.next() })
         }
         return buffer[offset]
     }
@@ -75,7 +87,7 @@ final class Parser {
         let pending = pendingHeredocs
         pendingHeredocs.removeAll()
         for heredoc in pending {
-            heredocBodies[heredoc.id] = try lexer.readHeredocBody(delimiter: heredoc.delimiter, stripTabs: heredoc.stripTabs)
+            heredocBodies[heredoc.id] = try lex { try lexer.readHeredocBody(delimiter: heredoc.delimiter, stripTabs: heredoc.stripTabs) }
         }
     }
 
@@ -293,7 +305,7 @@ final class Parser {
         case .op(let op):
             if op == .leftParen {
                 if lexer.sourceHasPrefix("((", at: token.start) {
-                    let text = try lexer.readArithmeticCommand(from: token.start)
+                    let text = try lex { try lexer.readArithmeticCommand(from: token.start) }
                     buffer.removeAll()
                     let redirections = try parseRedirections()
                     return .compound(.arithmetic(text), redirections: redirections, line: token.line)
@@ -565,7 +577,7 @@ final class Parser {
         let start = try advance() // for
         let nameToken = try peek()
         if nameToken.isOperator(.leftParen), lexer.sourceHasPrefix("((", at: nameToken.start) {
-            let text = try lexer.readArithmeticCommand(from: nameToken.start)
+            let text = try lex { try lexer.readArithmeticCommand(from: nameToken.start) }
             buffer.removeAll()
             let parts = Parser.splitArithmeticFor(text)
             guard parts.count == 3 else {
@@ -812,7 +824,7 @@ final class Parser {
             try advance()
             if op == "=~" {
                 buffer.removeAll()
-                let patternToken = try lexer.readConditionalPattern()
+                let patternToken = try lex { try lexer.readConditionalPattern() }
                 guard let pattern = patternToken.wordText else {
                     throw ParseError.incomplete(hint: "[[", line: patternToken.line)
                 }

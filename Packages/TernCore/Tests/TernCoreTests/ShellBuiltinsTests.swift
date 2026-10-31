@@ -140,7 +140,8 @@ final class ShellBuiltinsTests: XCTestCase {
 
     func testAliases() {
         assertShell("alias greet='echo hello'\ngreet world", prints: "hello world\n")
-        assertShell("alias a='echo A'; alias b='a B'; b C", prints: "A B C\n")
+        assertShell("alias a='echo A'\nalias b='a B'\nb C", prints: "A B C\n")
+        assertShell("alias a='echo A'; alias b='a B'; b C 2>&1 | grep -c 'not found'", prints: "1\n")
         assertShell("alias e='echo'; alias; unalias e; e x 2>&1 | head -1 | grep -c 'command not found'", prints: "alias e='echo'\n1\n")
         assertShell("alias loop='loop x'; loop 2>&1 | grep -c 'not found'", prints: "1\n")
         assertShell("alias q='echo'; 'q' 2>&1 | grep -c 'not found'", prints: "1\n")
@@ -191,7 +192,7 @@ final class ShellBuiltinsTests: XCTestCase {
         assertShell("let 'x = 2 + 3'; echo $x; let x++; echo $x; let 0; echo $?", prints: "5\n6\n1\n")
         assertShell("bg 2>&1 | grep -c 'not supported'; fg 2>/dev/null; echo $?", prints: "1\n1\n")
         assertShell("jobs; echo clean", prints: "clean\n")
-        assertShell("kill -l | head -2 | tr '\\n' ' '", prints: "1) SIGHUP 2) SIGINT \n")
+        assertShell("kill -l | head -2 | tr '\\n' ' '", prints: "1) SIGHUP 2) SIGINT ")
         assertShell("exec 3< /dev/null; read -u 3 x 2>/dev/null; cat <&3; echo ok", prints: "ok\n")
         assertShell("help 2>&1 | grep -c 'not available'; history 2>&1 | grep -c 'not available'", prints: "1\n1\n")
         let hostHelp = ShellTesting.run("help topic") { host, _ in

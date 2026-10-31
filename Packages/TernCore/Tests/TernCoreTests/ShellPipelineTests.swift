@@ -28,7 +28,7 @@ final class ShellPipelineTests: XCTestCase {
         assertShell("true | false; echo $?", prints: "1\n")
         assertShell("set -o pipefail; false | true; echo $?; (exit 3) | (exit 0); echo $?", prints: "1\n3\n")
         assertShell("! true | false; echo $?", prints: "0\n")
-        assertShell("echo err 1>&2 | cat; ls /nonexistent-tsh 2>&1 | grep -c 'No such'", prints: "err\n1\n")
+        assertShell("echo err 1>&2 | cat; ls /nonexistent-tsh 2>&1 | grep -c 'No such'", prints: "1\n")
         assertShell("ls /nonexistent-tsh |& grep -c 'No such'", prints: "1\n")
     }
 

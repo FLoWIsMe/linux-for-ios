@@ -173,7 +173,7 @@ extension Interpreter {
                 }
             }
             // Length modifiers are accepted and ignored.
-            while index < characters.count, "hlLqjzt".contains(characters[index]) { index += 1 }
+            while index < characters.count, "hlLjzt".contains(characters[index]) { index += 1 }
             guard index < characters.count else {
                 reportError("printf: missing format character")
                 return (result, consumed, 1, false)
