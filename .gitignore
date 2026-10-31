@@ -20,6 +20,7 @@ Package.resolved.bak
 # Toolchain binaries are downloaded by scripts/fetch-toolchain.sh and are never committed.
 Toolchain/cache/
 Toolchain/frameworks/
+Toolchain/vimruntime/
 
 # Local signing configuration (team id, bundle id overrides). Commit Config/Shared.xcconfig only.
 Config/Local.xcconfig

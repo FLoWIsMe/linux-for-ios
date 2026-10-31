@@ -99,6 +99,44 @@ while IFS=$'\t' read -r name url sha group; do
   fi
 done < "$MANIFEST"
 
+# Vim runtime files (syntax, help, ftplugins). The vim framework is Vim 8.1, so the runtime must match.
+VIM_TAG="v8.1.2424"
+VIM_SHA="8aec5f2c79fe2bc5536c1e6ad9a0396a76e6a4657495eafeeff8816bd2bec2e6"
+VIM_RUNTIME="$ROOT/Toolchain/vimruntime/vim"
+vim_zip="$CACHE/vim-$VIM_TAG.tar.gz"
+if [[ ! -d "$VIM_RUNTIME" ]]; then
+  if [[ "$mode" == "check" ]]; then
+    echo "missing: vim runtime" >&2
+    missing=1
+  else
+    if [[ ! -f "$vim_zip" ]] || [[ "$(sha256_of "$vim_zip")" != "$VIM_SHA" ]]; then
+      echo "Downloading Vim runtime $VIM_TAG"
+      curl --fail --location --silent --show-error --retry 3 --output "$vim_zip.part" \
+        "https://github.com/vim/vim/archive/refs/tags/$VIM_TAG.tar.gz"
+      actual="$(sha256_of "$vim_zip.part")"
+      if [[ "$actual" != "$VIM_SHA" ]]; then
+        rm -f "$vim_zip.part"
+        echo "error: SHA-256 mismatch for the Vim runtime archive ($actual)" >&2
+        exit 1
+      fi
+      mv "$vim_zip.part" "$vim_zip"
+    fi
+    tmpdir="$(mktemp -d)"
+    tar -xzf "$vim_zip" -C "$tmpdir" "vim-${VIM_TAG#v}/runtime"
+    src="$tmpdir/vim-${VIM_TAG#v}/runtime"
+    # Trim what a phone does not need: translations, the tutor, printing support, logos, and
+    # spelling files other than English UTF-8.
+    rm -rf "$src/lang" "$src/tutor" "$src/print" "$src/icons" "$src/tools"
+    rm -f "$src"/vimlogo.* "$src"/vim16x16.* "$src"/vim32x32.* "$src"/vim48x48.*
+    find "$src/spell" -type f ! -name 'en.utf-8.spl' ! -name 'en.utf-8.sug' ! -name '*.vim' -delete
+    mkdir -p "$(dirname "$VIM_RUNTIME")"
+    rm -rf "$VIM_RUNTIME"
+    mv "$src" "$VIM_RUNTIME"
+    rm -rf "$tmpdir"
+    echo "Extracted Vim runtime"
+  fi
+fi
+
 if [[ "$missing" -ne 0 ]]; then
   echo "Run scripts/fetch-toolchain.sh to download the toolchain." >&2
   exit 1
