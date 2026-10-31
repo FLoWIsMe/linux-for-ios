@@ -20,6 +20,22 @@ final class IOSSystemExecutor: CommandExecutor {
     private var runningCommands = 0
     private var cachedCommands: [String]?
 
+    // ios_system decides whether a stream "is a terminal" by comparing a command's stream with
+    // the session's stream (ios_isatty), and it keeps one set of session streams per session.
+    // Pipeline stages run concurrently, so the session streams must not change per command:
+    // they are three long lived FILE handles on the terminal, and only a command whose stdout,
+    // stderr or stdin really is the terminal uses them. Everything else (pipes, files) gets a
+    // private handle, which is exactly what makes `ls | less` page and `ls > file` stay plain.
+    private var terminalOutput: UnsafeMutablePointer<FILE>?
+    private var terminalError: UnsafeMutablePointer<FILE>?
+    private var terminalOutputDescriptor: Int32 = -1
+    private var terminalErrorDescriptor: Int32 = -1
+    /// The session's stdin keeps one descriptor number for its whole life; the pipe the host
+    /// opens for a command that reads the keyboard is dup2'ed onto it for that command's run.
+    private var terminalInput: UnsafeMutablePointer<FILE>?
+    private var terminalInputDescriptor: Int32 = -1
+    private var idleInput: (read: Int32, write: Int32)?
+
     /// Set by the session so interactive callbacks can flip the keyboard mode.
     weak var session: ShellSession?
 
@@ -31,7 +47,51 @@ final class IOSSystemExecutor: CommandExecutor {
 
     deinit {
         ExecutorRegistry.shared.unregister(self)
+        if let terminalOutput { fclose(terminalOutput) }
+        if let terminalError { fclose(terminalError) }
+        if let terminalInput { fclose(terminalInput) }
+        if let idleInput { close(idleInput.read); close(idleInput.write) }
         // sessionID is intentionally leaked: ios_system may still hold the pointer in its session table.
+    }
+
+    // MARK: Session streams
+
+    /// Returns the shared terminal handles, creating them from the host's descriptors on first use.
+    private func sessionStreams(output outputFD: Int32, error errorFD: Int32) -> (input: UnsafeMutablePointer<FILE>, output: UnsafeMutablePointer<FILE>, error: UnsafeMutablePointer<FILE>)? {
+        lock.lock(); defer { lock.unlock() }
+        if terminalOutput == nil || terminalOutputDescriptor != outputFD {
+            if let old = terminalOutput { fclose(old) }
+            let fd = dup(outputFD)
+            guard fd >= 0, let file = fdopen(fd, "w") else { return nil }
+            setvbuf(file, nil, _IOLBF, 0)
+            terminalOutput = file
+            terminalOutputDescriptor = outputFD
+        }
+        if terminalError == nil || terminalErrorDescriptor != errorFD {
+            if let old = terminalError { fclose(old) }
+            let fd = dup(errorFD)
+            guard fd >= 0, let file = fdopen(fd, "w") else { return nil }
+            setvbuf(file, nil, _IONBF, 0)
+            terminalError = file
+            terminalErrorDescriptor = errorFD
+        }
+        if terminalInput == nil {
+            // A pipe nobody writes to: reading the session stdin while no command owns the
+            // keyboard simply blocks, like an idle terminal. The session stdin is a separate
+            // descriptor number so it can be pointed at a command's keyboard pipe and back.
+            guard let idle = FileDescriptorIO.makePipe() else { return nil }
+            let descriptor = dup(idle.read)
+            guard descriptor >= 0, let file = fdopen(descriptor, "r") else {
+                FileDescriptorIO.closeQuietly(idle.read)
+                FileDescriptorIO.closeQuietly(idle.write)
+                return nil
+            }
+            idleInput = idle
+            terminalInputDescriptor = descriptor
+            terminalInput = file
+        }
+        guard let terminalInput, let terminalOutput, let terminalError else { return nil }
+        return (terminalInput, terminalOutput, terminalError)
     }
 
     // MARK: Window size
@@ -91,22 +151,49 @@ final class IOSSystemExecutor: CommandExecutor {
             return ExitStatus.notFound
         }
 
-        // Duplicate the descriptors so closing our FILE handles never touches the shell's own.
-        let inFD = dup(command.stdin)
-        let outFD = dup(command.stdout)
-        let errFD = dup(command.stderr)
-        guard inFD >= 0, outFD >= 0, errFD >= 0,
-              let input = fdopen(inFD, "r"),
-              let output = fdopen(outFD, "w"),
-              let error = fdopen(errFD, "w") else {
-            FileDescriptorIO.writeAll(command.stderr, "tsh: \(name): could not open standard streams\n")
-            [inFD, outFD, errFD].forEach { if $0 >= 0 { close($0) } }
+        let terminalOutputFD = session?.terminalOutput ?? command.stdout
+        let terminalErrorFD = session?.terminalError ?? command.stderr
+        guard let sessionStreams = sessionStreams(output: terminalOutputFD, error: terminalErrorFD) else {
+            FileDescriptorIO.writeAll(command.stderr, "tsh: \(name): could not open the terminal streams\n")
             return ExitStatus.cannotExecute
         }
-        // A terminal is line buffered for stdout and unbuffered for stderr; mirror that so output
-        // appears as it is produced instead of in 4 KB chunks.
-        setvbuf(output, nil, _IOLBF, 0)
-        setvbuf(error, nil, _IONBF, 0)
+
+        // Streams that are the terminal share the session handles; anything else gets a private
+        // handle on a duplicated descriptor, so closing it never touches the shell's own.
+        var ownedFiles: [UnsafeMutablePointer<FILE>] = []
+        func privateStream(_ fd: Int32, mode: String, lineBuffered: Bool) -> UnsafeMutablePointer<FILE>? {
+            let copy = dup(fd)
+            guard copy >= 0 else { return nil }
+            guard let file = fdopen(copy, mode) else { close(copy); return nil }
+            // Line buffering keeps pipelines streaming; a terminal is line buffered anyway.
+            setvbuf(file, nil, lineBuffered ? _IOLBF : _IONBF, 0)
+            ownedFiles.append(file)
+            return file
+        }
+        let stdoutIsTerminal = command.stdoutIsTerminal || command.stdout == terminalOutputFD
+        let stderrIsTerminal = command.stderr == terminalErrorFD || command.stderr == terminalOutputFD
+        let output = stdoutIsTerminal ? sessionStreams.output : privateStream(command.stdout, mode: "w", lineBuffered: true)
+        let error = stderrIsTerminal ? (command.stderr == terminalOutputFD ? sessionStreams.output : sessionStreams.error)
+            : privateStream(command.stderr, mode: "w", lineBuffered: false)
+        var input: UnsafeMutablePointer<FILE>?
+        if command.stdinIsTerminal {
+            // The host's keyboard pipe takes over the session stdin descriptor for this run.
+            lock.lock()
+            let target = terminalInputDescriptor
+            lock.unlock()
+            if dup2(command.stdin, target) >= 0 {
+                fpurge(sessionStreams.input)
+                clearerr(sessionStreams.input)
+                input = sessionStreams.input
+            }
+        } else {
+            input = privateStream(command.stdin, mode: "r", lineBuffered: true)
+        }
+        guard let input, let output, let error else {
+            FileDescriptorIO.writeAll(command.stderr, "tsh: \(name): could not open standard streams\n")
+            ownedFiles.forEach { fclose($0) }
+            return ExitStatus.cannotExecute
+        }
 
         // The tty pipe receives keystrokes while a command owns the terminal (password prompts, less).
         let tty = FileDescriptorIO.makePipe()
@@ -128,7 +215,7 @@ final class IOSSystemExecutor: CommandExecutor {
             chdir(SystemEnvironment.homeDirectory)
         }
         tern_set_thread_streams(input, output, error, UnsafeRawPointer(sessionID))
-        ios_setStreams(input, output, error)
+        ios_setStreams(sessionStreams.input, sessionStreams.output, sessionStreams.error)
         if let ttyFile { ios_settty(ttyFile) }
 
         let line = IOSSystemQuoting.commandLine(command.argv)
@@ -143,9 +230,15 @@ final class IOSSystemExecutor: CommandExecutor {
         fflush(output)
         fflush(error)
         tern_clear_thread_streams()
-        fclose(input)
-        fclose(output)
-        fclose(error)
+        ownedFiles.forEach { fclose($0) }
+        if command.stdinIsTerminal, let idleInput {
+            // Hand the session stdin back to the idle pipe and drop what the command left unread.
+            lock.lock()
+            let target = terminalInputDescriptor
+            lock.unlock()
+            fpurge(sessionStreams.input)
+            dup2(idleInput.read, target)
+        }
 
         lock.lock()
         runningCommands -= 1
