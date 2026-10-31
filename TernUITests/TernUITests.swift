@@ -115,7 +115,8 @@ final class TernUITests: XCTestCase {
     func testInteractiveSSHSession() throws {
         let environment = ProcessInfo.processInfo.environment
         guard let host = environment["TERN_UITEST_SSH_HOST"], !host.isEmpty else {
-            throw XCTSkip("Set TERN_UITEST_SSH_HOST (and TERN_UITEST_SSH_KEY) to run the interactive ssh test")
+            let seen = environment.keys.filter { $0.contains("TERN") || $0.contains("RUNNER") }.sorted().joined(separator: ", ")
+            throw XCTSkip("Set TERN_UITEST_SSH_HOST (and TERN_UITEST_SSH_KEY) to run the interactive ssh test (saw: \(seen))")
         }
         if let key = environment["TERN_UITEST_SSH_KEY"], !key.isEmpty {
             // Fresh installs get a fresh sandbox, so hand the app the test key to install.
