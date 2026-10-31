@@ -23,10 +23,13 @@ set laststatus=2
 " Touch friendly: tap to place the cursor, drag to select, scroll to move.
 set mouse=a
 
-" Save undo history and swap files inside the app, never next to the file.
-set directory=$TMPDIR
+" No swap files: iOS ends the app without warning often enough that every reopened file would
+" greet you with a "swap file already exists" prompt, and nothing else edits your files here.
+" Undo history is kept instead, so u still works after reopening a file.
+set noswapfile
 set backupdir=$TMPDIR
 set undodir=$TMPDIR
+set undofile
 set viminfo+=n~/.viminfo
 
 " Sensible indentation for people who do not configure anything.
