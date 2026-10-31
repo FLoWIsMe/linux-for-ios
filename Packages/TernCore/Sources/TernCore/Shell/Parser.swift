@@ -131,8 +131,14 @@ final class Parser {
     /// or at the end of input. Returns nil when the input is exhausted.
     func parseCompleteCommand() throws -> CommandList? {
         try skipNewlines()
-        if try peek().kind == .eof { return nil }
+        let first = try peek()
+        if first.kind == .eof { return nil }
+        if isListTerminator(first, terminators: []) { throw unexpected(first) }
         var list = try parseList(terminators: [], topLevel: true)
+        if !pendingHeredocs.isEmpty {
+            // Input ended before the heredoc body was supplied.
+            throw ParseError.incomplete(hint: "heredoc", line: try peek().line)
+        }
         fillHeredocs(in: &list)
         return list
     }
@@ -158,13 +164,20 @@ final class Parser {
         }
     }
 
-    private func parseList(terminators: Set<String>, topLevel: Bool) throws -> CommandList {
+    private func parseList(terminators: Set<String>, topLevel: Bool, allowEmpty: Bool = false) throws -> CommandList {
         var list = CommandList()
         try skipNewlines()
         list.line = try peek().line
         while true {
             let token = try peek()
-            if isListTerminator(token, terminators: terminators) { break }
+            if isListTerminator(token, terminators: terminators) {
+                if list.items.isEmpty, !topLevel, !allowEmpty, token.kind != .eof {
+                    // Compound commands need at least one command, like bash: `if then` is an error.
+                    // At EOF the caller reports which construct is still open.
+                    throw unexpected(token)
+                }
+                break
+            }
             let andOr = try parseAndOr()
             let separatorToken = try peek()
             switch separatorToken.kind {
@@ -672,7 +685,7 @@ final class Parser {
                 if next.kind == .eof { throw ParseError.incomplete(hint: "case", line: next.line) }
                 throw unexpected(next)
             }
-            let body = try parseList(terminators: ["esac"], topLevel: false)
+            let body = try parseList(terminators: ["esac"], topLevel: false, allowEmpty: true)
             let terminatorToken = try peek()
             var terminator = CaseTerminator.stop
             if terminatorToken.isOperator(.doubleSemicolon) {
@@ -709,10 +722,14 @@ final class Parser {
 
     private func parseConditional() throws -> Command {
         let start = try advance() // [[
+        buffer.removeAll()
+        lexer.conditionalMode = true
+        defer { lexer.conditionalMode = false }
         try skipNewlines()
         let expression = try parseConditionalOr()
         try skipNewlines()
         try expectWord("]]", hint: "[[")
+        lexer.conditionalMode = false
         let redirections = try parseRedirections()
         return .compound(.conditional(expression), redirections: redirections, line: start.line)
     }
@@ -793,6 +810,14 @@ final class Parser {
         }
         if let op = opToken.wordText, Parser.conditionalBinaryOperators.contains(op) {
             try advance()
+            if op == "=~" {
+                buffer.removeAll()
+                let patternToken = try lexer.readConditionalPattern()
+                guard let pattern = patternToken.wordText else {
+                    throw ParseError.incomplete(hint: "[[", line: patternToken.line)
+                }
+                return .binary(op: op, lhs: lhs, rhs: Word(pattern, line: patternToken.line))
+            }
             let rhsToken = try peek()
             guard let rhs = rhsToken.wordText, !conditionalEnd(rhsToken) else {
                 if rhsToken.kind == .eof { throw ParseError.incomplete(hint: "[[", line: rhsToken.line) }

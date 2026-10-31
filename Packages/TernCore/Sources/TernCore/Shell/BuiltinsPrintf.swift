@@ -182,18 +182,15 @@ extension Interpreter {
             index += 1
 
             switch conversion {
-            case "d", "i":
-                let (value, ok) = Interpreter.printfInteger(nextArgument() ?? "")
-                if !ok { status = 1 }
-                result += Interpreter.formatInteger(value, flags: flags, width: width, precision: precision, conversion: "d")
-            case "u":
-                let (value, ok) = Interpreter.printfInteger(nextArgument() ?? "")
-                if !ok { status = 1 }
-                result += Interpreter.formatInteger(value, flags: flags, width: width, precision: precision, conversion: "u")
-            case "o", "x", "X":
-                let (value, ok) = Interpreter.printfInteger(nextArgument() ?? "")
-                if !ok { status = 1 }
-                result += Interpreter.formatInteger(value, flags: flags, width: width, precision: precision, conversion: conversion)
+            case "d", "i", "u", "o", "x", "X":
+                let argument = nextArgument() ?? ""
+                let (value, ok) = Interpreter.printfInteger(argument)
+                if !ok {
+                    reportError("printf: \(argument): invalid number")
+                    status = 1
+                }
+                let target: Character = conversion == "i" ? "d" : conversion
+                result += Interpreter.formatInteger(value, flags: flags, width: width, precision: precision, conversion: target)
             case "e", "E", "f", "F", "g", "G", "a", "A":
                 let argument = nextArgument() ?? ""
                 let value = Interpreter.printfDouble(argument)
