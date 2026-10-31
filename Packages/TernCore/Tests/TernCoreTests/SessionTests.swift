@@ -256,7 +256,7 @@ final class SessionTests: XCTestCase {
         startSession()
         waitForPrompt()
         type("printf 'a\\nb\\n' | sort -r\r")
-        XCTAssertTrue(waitUntil { self.screen.hasSuffix("b\na\n$ ") }, screen)
+        XCTAssertTrue(waitUntil { self.screen.hasSuffix("b\na\n$ ") }, "screen: \(screen.debugDescription) raw: \(terminal.text.debugDescription) mode: \(session.mode) running: \(String(describing: session.runningCommand))")
         XCTAssertTrue(recorder.started.contains { $0.first == "sort" }, "\(recorder.started)")
     }
 
