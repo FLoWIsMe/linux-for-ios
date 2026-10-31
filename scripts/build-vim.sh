@@ -5,17 +5,21 @@
 # scripts/embed-toolchain.py prefers over the manifest's prebuilt archives. The matching runtime
 # files are copied to Toolchain/local/vim-runtime.
 #
-# Usage: scripts/build-vim.sh [--ref <git ref>] [--jobs N]
+# Usage: scripts/build-vim.sh [--ref <git ref>] [--jobs N] [--zip]
 # Needs Xcode, the toolchain fetched (for ios_system.framework) and about 10 minutes.
+# --zip also writes vim.xcframework.zip, xxd.xcframework.zip and vim-runtime.zip plus sha256
+# files to Toolchain/local for publishing as release assets.
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REF="master"
 JOBS="$(sysctl -n hw.ncpu 2>/dev/null || echo 4)"
+ZIP=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --ref) REF="$2"; shift 2 ;;
     --jobs) JOBS="$2"; shift 2 ;;
+    --zip) ZIP=1; shift ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
@@ -113,3 +117,13 @@ rm -f "$OUT/vim-runtime/vim"/vimlogo.* "$OUT/vim-runtime/vim"/vim16x16.* "$OUT/v
 find "$OUT/vim-runtime/vim/spell" -type f ! -name 'en.utf-8.spl' ! -name 'en.utf-8.sug' ! -name '*.vim' -delete 2>/dev/null || true
 echo "Runtime copied to $OUT/vim-runtime/vim ($(du -sh "$OUT/vim-runtime/vim" | cut -f1))"
 strings "Frameworks_iphoneos/vim.framework/vim" | grep -m1 "^VIM - Vi IMproved"
+
+if [[ "$ZIP" == 1 ]]; then
+  cd "$OUT"
+  for archive in vim.xcframework xxd.xcframework vim-runtime; do
+    rm -f "$archive.zip"
+    zip -qry "$archive.zip" "$archive"
+    shasum -a 256 "$archive.zip" | cut -d' ' -f1 > "$archive.zip.sha256"
+    echo "  $(cat "$archive.zip.sha256")  $archive.zip"
+  done
+fi

@@ -1,0 +1,64 @@
+name: Build toolchain
+
+# Manual workflow: builds the frameworks Tern compiles itself (Vim, xxd and the OpenSSH set) on
+# a macOS runner and publishes them as release assets, so that scripts/fetch-toolchain.sh can
+# download verified binaries instead of every contributor compiling them. After a run, copy the
+# printed manifest lines into Toolchain/manifest.tsv.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag for the assets (for example toolchain-2026-10-31)"
+        required: true
+      vim_ref:
+        description: "holzschu/vim git ref"
+        required: false
+        default: master
+      ios_system_ref:
+        description: "holzschu/ios_system git ref"
+        required: false
+        default: v3.0.6
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Cache toolchain downloads
+        uses: actions/cache@v4
+        with:
+          path: Toolchain/cache
+          key: toolchain-${{ hashFiles('Toolchain/manifest.tsv', 'scripts/fetch-toolchain.sh') }}
+      - name: Fetch prebuilt dependencies
+        run: bash scripts/fetch-toolchain.sh
+      - name: Build OpenSSH frameworks
+        run: bash scripts/build-ssh.sh --ref "${{ inputs.ios_system_ref }}" --zip
+      - name: Build Vim
+        run: bash scripts/build-vim.sh --ref "${{ inputs.vim_ref }}" --zip
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          cd Toolchain/local
+          notes="Prebuilt frameworks for Tern, built by the toolchain workflow (run ${{ github.run_id }}).
+
+          Vim: holzschu/vim ${{ inputs.vim_ref }}. OpenSSH: holzschu/ios_system ${{ inputs.ios_system_ref }} with the user directory changed from Documents/.ssh to .ssh.
+
+          SHA-256:
+          $(for f in *.zip; do echo "- $f: $(cat "$f.sha256")"; done)"
+          gh release create "$TAG" *.zip *.sha256 --repo "${{ github.repository }}" --title "Toolchain $TAG" --notes "$notes"
+          echo "Manifest lines:"
+          base="https://github.com/${{ github.repository }}/releases/download/$TAG"
+          for f in *.xcframework.zip; do
+            name="${f%.xcframework.zip}"
+            printf '%s\t%s/%s\t%s\n' "$name" "$base" "$f" "$(cat "$f.sha256")"
+          done
+          printf 'vim-runtime\t%s/vim-runtime.zip\t%s\truntime\n' "$base" "$(cat vim-runtime.zip.sha256)"
