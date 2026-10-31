@@ -217,6 +217,23 @@ def string_sections(data: bytes) -> list[tuple[int, int]]:
     return thin(0)
 
 
+def rewrite_path_constant(original: bytes, name: str) -> bytes:
+    updated = original
+    if b"Documents" in updated:
+        updated = (
+            updated.replace(b"~/Documents/", b"~/")
+            .replace(b"~/Documents", b"~")
+            .replace(b"$HOME/Documents/", b"$HOME/")
+            .replace(b"Documents/", b"")
+        )
+    if name in {"ssh_cmd", "ssh_cmdA"} and updated == b"/usr/bin/ssh":
+        # scp and sftp start ssh through ios_system, which resolves plain names through its
+        # command table. The absolute path only works where /usr/bin/ssh does not exist as a
+        # file; on the Simulator it is the Mac's own ssh and the lookup fails.
+        updated = b"ssh"
+    return updated
+
+
 def retarget_home_paths(binary: Path, name: str) -> None:
     if not binary.is_file():
         return
@@ -230,13 +247,8 @@ def retarget_home_paths(binary: Path, name: str) -> None:
             if stop < 0:
                 stop = end
             original = bytes(data[start:stop])
-            if b"Documents" in original and len(original) < 512 and all(0x20 <= byte < 0x7F or byte in b"\n\r\t" for byte in original):
-                updated = (
-                    original.replace(b"~/Documents/", b"~/")
-                    .replace(b"~/Documents", b"~")
-                    .replace(b"$HOME/Documents/", b"$HOME/")
-                    .replace(b"Documents/", b"")
-                )
+            if len(original) < 512 and all(0x20 <= byte < 0x7F or byte in b"\n\r\t" for byte in original):
+                updated = rewrite_path_constant(original, name)
                 if updated != original:
                     if len(updated) > len(original):
                         fail(f"{name}: rewritten path grew ({original!r} -> {updated!r})")
