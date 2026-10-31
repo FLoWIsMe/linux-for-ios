@@ -21,6 +21,10 @@ extension Interpreter {
             return 2
         }
 
+        if Interpreter.utilityBuiltins.contains(name) {
+            return try runUtilityBuiltin(name: name, args: args, io: io)
+        }
+
         switch name {
         case ":", "true":
             return 0

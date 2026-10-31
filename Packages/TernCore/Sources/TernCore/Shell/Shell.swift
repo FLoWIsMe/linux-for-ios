@@ -113,11 +113,11 @@ public struct ShellSnapshot: Sendable {
 /// `local`, `return`, `break`, `continue`. Arrays and `select` are not supported in v1.
 public final class Shell {
     public static let builtinNames: [String] = [
-        ".", ":", "[", "alias", "bg", "break", "builtin", "cd", "clear", "command", "continue", "declare",
+        ".", ":", "[", "alias", "bg", "break", "builtin", "cd", "clear", "command", "continue", "cut", "declare",
         "dirs", "echo", "eval", "exec", "exit", "export", "false", "fg", "getopts", "hash", "help", "history",
-        "jobs", "kill", "let", "local", "popd", "printf", "pushd", "pwd", "read", "readonly", "return", "set",
-        "shift", "source", "test", "times", "trap", "true", "type", "typeset", "ulimit", "umask", "unalias",
-        "unset", "wait", "which",
+        "jobs", "kill", "let", "local", "mktemp", "popd", "printf", "pushd", "pwd", "read", "readonly", "realpath",
+        "return", "rev", "seq", "set", "shift", "source", "tac", "test", "times", "trap", "true", "tty", "type",
+        "typeset", "ulimit", "umask", "unalias", "unset", "wait", "which", "yes",
     ]
 
     /// `$0` of the interactive shell. Scripts and sourced files use their own names.
