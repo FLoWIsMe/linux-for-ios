@@ -40,6 +40,7 @@ struct TerminalScreen: View {
             model.ensureSession()
         }
         .onChange(of: colorScheme) { _, scheme in model.update(colorScheme: scheme) }
+        .onOpenURL { url in URLCommands.handle(url, model: model) }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background: model.enteredBackground()
