@@ -130,6 +130,7 @@ final class TerminalSessionController: NSObject, Identifiable {
         // because the native color setter defers the layer update in some states (reverse video bookkeeping).
         terminalView.layer.backgroundColor = palette.background.uiColor.cgColor
         terminalView.isOpaque = false
+        terminalView.layer.isOpaque = false
         terminalView.updateColorScheme(palette.isDark ? .dark : .light)
     }
 
