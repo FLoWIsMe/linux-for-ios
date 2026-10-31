@@ -196,7 +196,7 @@ struct TabChip: View {
         .padding(.leading, 12)
         .padding(.trailing, isSelected && canClose ? 6 : 12)
         .frame(height: 34)
-        .background(isSelected ? ChromeColor.control : Color.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(isSelected ? ChromeColor.control : ChromeColor.control.opacity(0.4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture(perform: select)
         .contextMenu {
