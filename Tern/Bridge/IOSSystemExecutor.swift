@@ -130,6 +130,9 @@ final class IOSSystemExecutor: CommandExecutor {
 
     func commandExists(_ name: String) -> Bool {
         if SystemEnvironment.unavailableReason(for: name) != nil { return true }
+        // ios_executable runs the name through basename(3), whose result lives in a static
+        // buffer; pipeline stages resolve their commands at the same time, so serialize the calls.
+        lock.lock(); defer { lock.unlock() }
         return ios_executable(name) != 0
     }
 
