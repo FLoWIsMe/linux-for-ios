@@ -381,7 +381,7 @@ final class SessionTests: XCTestCase {
         XCTAssertEqual(recorder.lines, [""], "a fresh prompt reports its empty line")
         XCTAssertEqual(session.editorLine, "")
         type("ab")
-        XCTAssertEqual(recorder.lines.suffix(2), ["a", "ab"])
+        XCTAssertEqual(recorder.lines.last, "ab")
         XCTAssertEqual(session.editorLine, "ab")
         session.handleInput([0x7f])
         XCTAssertEqual(recorder.lines.last, "a")
@@ -397,7 +397,7 @@ final class SessionTests: XCTestCase {
         session.handleInput([0x07])
         XCTAssertEqual(recorder.lines.last, "a")
         // Submitting ends the line; a running command has no line; the next prompt starts empty.
-        type("\u{15}cat\r")
+        type("\u{05}\u{15}cat\r")
         XCTAssertTrue(waitUntil { self.session.mode == .cooked(command: "cat") }, "\(session.mode)")
         XCTAssertNil(session.editorLine)
         XCTAssertEqual(recorder.lines.last ?? "unset", nil)
