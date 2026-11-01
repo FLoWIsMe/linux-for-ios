@@ -44,7 +44,7 @@ enum HelpText {
         \(bold)App\(reset)       tern (themes, fonts), open, mount, pbcopy, pbpaste, keys, hosts, settings, newtab
 
         \(bold)Shortcuts\(reset)
-          Tab          complete commands and paths (press twice to list)
+          Tab          complete commands and paths, and list what matches
           Up / Down    history, or search history for what you typed
           Ctrl-R       search history
           Ctrl-C       stop the running command
@@ -67,6 +67,7 @@ enum HelpText {
           ctrl         latches until the next key: ctrl then c sends Ctrl-C
           alt          latches like ctrl and sends Alt (Meta) combinations
           arrows       press and hold to repeat
+          delete       press and hold to repeat, then to delete whole words
           ^C           interrupt the running command
           Swipe the symbol row for | ~ / : quotes and more.
 
@@ -186,7 +187,7 @@ enum HelpText {
         """
         \(bold)Commands\(reset)
 
-        Type the first letters and press Tab twice to see what is available. Highlights:
+        Type the first letters and press Tab to see what is available. Highlights:
 
         \(bold)Files\(reset)      ls cp mv rm mkdir rmdir ln touch chmod stat du df find tar gzip gunzip compress base64 cksum md5 sha256
         \(bold)Text\(reset)       cat head tail less more grep egrep fgrep sed awk sort uniq tr wc diff xxd ed jq tee xargs

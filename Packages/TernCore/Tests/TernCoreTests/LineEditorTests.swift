@@ -343,6 +343,20 @@ final class LineEditorTests: XCTestCase {
         XCTAssertEqual(submit.event, .submit("cd /tmp"))
     }
 
+    func testReverseSearchAltBackspaceDropsLastWordOfQuery() {
+        history.append("git status")
+        history.append("git log")
+        let editor = makeEditor()
+        _ = editor.feed(key: .control("r"))
+        _ = type(editor, "git lo")
+        let output = editor.feed(key: .altBackspace)
+        XCTAssertTrue(output.text.contains("(reverse-i-search)'git ': git log"), output.text)
+        _ = editor.feed(key: .altBackspace)
+        _ = editor.feed(key: .altBackspace)
+        let submit = editor.feed(key: .enter)
+        XCTAssertEqual(submit.event, .submit(""))
+    }
+
     func testReverseSearchEscapeKeepsMatch() {
         history.append("git status")
         let editor = makeEditor()
@@ -401,14 +415,26 @@ final class LineEditorTests: XCTestCase {
         _ = editor.feed(key: .tab)
         XCTAssertEqual(editor.text, "exit ")
 
+        // Ambiguous: one Tab fills in the common prefix and lists every candidate under the line.
         _ = editor.feed(key: .control("u"))
         _ = type(editor, "cat al")
-        _ = editor.feed(key: .tab)
-        XCTAssertEqual(editor.text, "cat alpha")
         let listing = editor.feed(key: .tab)
+        XCTAssertEqual(editor.text, "cat alpha")
         XCTAssertTrue(listing.text.contains("alpha.txt"), listing.text)
         XCTAssertTrue(listing.text.contains("alphabet.md"), listing.text)
         XCTAssertTrue(listing.text.hasSuffix("\r\u{1b}[J$ cat alpha\r\u{1b}[11C"), listing.text)
+        // The listing starts below the text as drawn before the edit ("cat al", column 8).
+        XCTAssertTrue(listing.text.hasPrefix("\r\u{1b}[8C\u{1b}[J\r\n"), listing.text)
+        let again = editor.feed(key: .tab)
+        XCTAssertEqual(editor.text, "cat alpha")
+        XCTAssertTrue(again.text.contains("alphabet.md"), "no progress still lists")
+
+        // A unique match is filled in without a listing.
+        _ = editor.feed(key: .control("u"))
+        _ = type(editor, "cat alphab")
+        let unique = editor.feed(key: .tab)
+        XCTAssertEqual(editor.text, "cat alphabet.md ")
+        XCTAssertFalse(unique.text.contains("\r\n"), unique.text)
 
         _ = editor.feed(key: .control("u"))
         _ = type(editor, "cat be")
@@ -416,16 +442,59 @@ final class LineEditorTests: XCTestCase {
         XCTAssertEqual(editor.text, "cat beta/")
     }
 
+    func testTabOnDirectoryListsWhatIsInside() throws {
+        let directory = try makeTemporaryDirectory(files: ["scripts/build.sh", "scripts/deploy.sh", "scripts/notes.txt"], directories: ["scripts", "scripts/lib", "empty"])
+        snapshot = ShellSnapshot(workingDirectory: directory, homeDirectory: directory, builtinNames: ["cd", "echo", "exit"], externalCommandNames: ["ls", "chmod", "cat"])
+        let editor = makeEditor(completion: CompletionEngine())
+
+        // Completing a folder fills in the slash and shows the files chmod can take, in one press.
+        _ = type(editor, "chmod +x scr")
+        let output = editor.feed(key: .tab)
+        XCTAssertEqual(editor.text, "chmod +x scripts/")
+        XCTAssertTrue(output.text.contains("build.sh"), output.text)
+        XCTAssertTrue(output.text.contains("deploy.sh"), output.text)
+        XCTAssertTrue(output.text.contains("notes.txt"), output.text)
+        XCTAssertTrue(output.text.contains("lib/"), output.text)
+        XCTAssertTrue(output.text.hasSuffix("\r\u{1b}[J$ chmod +x scripts/\r\u{1b}[19C"), output.text)
+
+        // Nothing inside: just the slash.
+        _ = editor.feed(key: .control("u"))
+        _ = type(editor, "chmod +x em")
+        let empty = editor.feed(key: .tab)
+        XCTAssertEqual(editor.text, "chmod +x empty/")
+        XCTAssertFalse(empty.text.contains("\r\n"), empty.text)
+
+        // cd only ever offers directories, so the listing after the slash shows those.
+        _ = editor.feed(key: .control("u"))
+        _ = type(editor, "cd scr")
+        let folders = editor.feed(key: .tab)
+        XCTAssertEqual(editor.text, "cd scripts/")
+        XCTAssertTrue(folders.text.contains("lib/"), folders.text)
+        XCTAssertFalse(folders.text.contains("build.sh"), folders.text)
+    }
+
+    func testListingErasesTrailingSuggestionBeforePrinting() throws {
+        let directory = try makeTemporaryDirectory(files: ["alpha.txt", "alphabet.md"], directories: [])
+        snapshot = ShellSnapshot(workingDirectory: directory, homeDirectory: directory, builtinNames: ["cd"], externalCommandNames: ["cat"])
+        history.append("cat alpha.txt && echo done")
+        let editor = makeEditor(completion: CompletionEngine())
+        _ = type(editor, "cat al")
+        XCTAssertTrue(editor.hasActiveSuggestion)
+        let listing = editor.feed(key: .tab)
+        XCTAssertTrue(listing.text.hasPrefix("\r\u{1b}[8C\u{1b}[J\r\n"), listing.text)
+        XCTAssertFalse(editor.hasActiveSuggestion, "Tab dismisses the suggestion")
+    }
+
     // MARK: Helpers
 
     private func makeTemporaryDirectory(files: [String], directories: [String]) throws -> String {
         let base = NSTemporaryDirectory() + "tern-editor-tests-" + UUID().uuidString
         try FileManager.default.createDirectory(atPath: base, withIntermediateDirectories: true)
-        for file in files {
-            try "x".write(toFile: base + "/" + file, atomically: true, encoding: .utf8)
-        }
         for directory in directories {
             try FileManager.default.createDirectory(atPath: base + "/" + directory, withIntermediateDirectories: true)
+        }
+        for file in files {
+            try "x".write(toFile: base + "/" + file, atomically: true, encoding: .utf8)
         }
         addTeardownBlock { try? FileManager.default.removeItem(atPath: base) }
         return base

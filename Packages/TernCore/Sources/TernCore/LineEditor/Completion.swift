@@ -85,6 +85,22 @@ public final class CompletionEngine {
     public static let hostCommands: Set<String> = ["ssh", "scp", "sftp", "ping", "ping6", "telnet", "nc", "ssh-copy-id", "rsync"]
     public static let directoryOnlyCommands: Set<String> = ["cd", "pushd", "rmdir", "chdir"]
 
+    /// Commands whose file arguments are nearly always of one kind, by extension (lowercase, no
+    /// dot). Only files of that kind are offered, plus directories so the file can be inside one.
+    /// When nothing of that kind matches what was typed, every file is offered again, so a script
+    /// without an extension is never out of reach.
+    public static let preferredExtensions: [String: [String]] = [
+        "python3": ["py"], "python": ["py"],
+        "lua": ["lua"],
+        "jq": ["json"],
+        "bc": ["bc"],
+        "unzip": ["zip"], "zipinfo": ["zip"],
+        "gunzip": ["gz", "tgz", "z"], "zcat": ["gz", "tgz", "z"],
+        "bunzip2": ["bz2", "tbz", "tbz2"], "bzcat": ["bz2", "tbz", "tbz2"],
+        "unxz": ["xz", "txz"], "xzcat": ["xz", "txz"],
+        "uncompress": ["z"],
+    ]
+
     public static let optionTable: [String: [String]] = [
         "ls": ["-a", "-l", "-h", "-R", "-t", "-S", "-r", "-1", "-G", "-F", "-d", "-A", "--help"],
         "grep": ["-i", "-v", "-n", "-r", "-R", "-E", "-F", "-l", "-c", "-w", "-x", "-A", "-B", "-C", "-o", "-q", "--color", "--include", "--exclude"],
@@ -235,7 +251,20 @@ public final class CompletionEngine {
         }
 
         let directoriesOnly = CompletionEngine.directoryOnlyCommands.contains(command)
-        return fileCandidates(word: word, snapshot: snapshot, directoriesOnly: directoriesOnly, executablesOnly: false)
+        let candidates = fileCandidates(word: word, snapshot: snapshot, directoriesOnly: directoriesOnly, executablesOnly: false)
+        return CompletionEngine.preferring(CompletionEngine.preferredExtensions[command] ?? [], in: candidates)
+    }
+
+    /// Keeps the files whose extension is in `extensions` (and every directory). Returns the
+    /// candidates unchanged when `extensions` is empty or no file matches.
+    static func preferring(_ extensions: [String], in candidates: [CompletionCandidate]) -> [CompletionCandidate] {
+        guard !extensions.isEmpty else { return candidates }
+        let preferred = candidates.filter { candidate in
+            guard candidate.kind == .file else { return true }
+            let name = candidate.display.lowercased()
+            return extensions.contains { name.hasSuffix("." + $0) }
+        }
+        return preferred.contains { $0.kind == .file } ? preferred : candidates
     }
 
     func variableCandidates(word: String, snapshot: ShellSnapshot) -> [CompletionCandidate] {

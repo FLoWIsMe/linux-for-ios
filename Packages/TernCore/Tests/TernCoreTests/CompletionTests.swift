@@ -88,6 +88,23 @@ final class CompletionTests: XCTestCase {
         XCTAssertEqual(texts("cat make"), ["Makefile"], "case insensitive fallback when nothing matches exactly")
     }
 
+    func testPreferredExtensionsPerCommand() throws {
+        for name in ["tool.py", "tool.sh", "archive.zip", "archive.tar", "config.json"] {
+            try "x".write(toFile: directory + "/" + name, atomically: true, encoding: .utf8)
+        }
+        // python only wants .py files, with directories kept so a file inside one stays reachable.
+        XCTAssertEqual(texts("python3 "), ["data/", "docs/", "tool.py"])
+        XCTAssertEqual(texts("python3 to"), ["tool.py"])
+        XCTAssertEqual(texts("unzip ar"), ["archive.zip"])
+        XCTAssertEqual(texts("jq . con"), ["config.json"])
+        // Nothing of the preferred kind matches: everything is offered, as before.
+        XCTAssertEqual(texts("python3 ru"), ["run.sh"])
+        XCTAssertEqual(texts("python3 Make"), ["Makefile"])
+        // Commands without a preference see every file.
+        XCTAssertEqual(texts("chmod +x to"), ["tool.py", "tool.sh"])
+        XCTAssertEqual(texts("chmod +x ar"), ["archive.tar", "archive.zip"])
+    }
+
     func testDirectoryOnlyCommands() {
         XCTAssertEqual(texts("cd "), ["data/", "docs/"])
         XCTAssertEqual(texts("pushd do"), ["docs/"])

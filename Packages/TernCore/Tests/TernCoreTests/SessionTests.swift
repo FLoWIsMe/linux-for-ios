@@ -373,6 +373,23 @@ final class SessionTests: XCTestCase {
         XCTAssertTrue(waitUntil { self.screen == "$ echo queued\nqueued\n$ " }, screen)
     }
 
+    func testDeleteWordBackwardActsAtThePromptOnly() {
+        startSession()
+        waitForPrompt()
+        type("chmod +x scripts/build.sh")
+        XCTAssertTrue(session.deleteWordBackward())
+        XCTAssertTrue(waitUntil { self.screen == "$ chmod +x scripts/build." }, screen)
+        XCTAssertTrue(session.deleteWordBackward())
+        XCTAssertTrue(waitUntil { self.screen == "$ chmod +x scripts/" }, screen)
+        XCTAssertTrue(session.deleteWordBackward())
+        XCTAssertTrue(waitUntil { self.screen == "$ chmod +x " }, screen)
+        type("\u{15}cat\r")
+        XCTAssertTrue(waitUntil { self.session.mode == .cooked(command: "cat") }, "\(session.mode)")
+        XCTAssertFalse(session.deleteWordBackward(), "a running command gets plain backspaces instead")
+        session.handleInput([0x04])
+        waitForPrompt()
+    }
+
     func testTypeAheadWhileCommandRuns() {
         startSession()
         waitForPrompt()

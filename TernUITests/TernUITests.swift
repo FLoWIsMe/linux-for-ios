@@ -168,6 +168,69 @@ final class TernUITests: XCTestCase {
         screenshot("08-keyboard-history")
     }
 
+    /// The last row of the screen, as the terminal mirrors it for tests.
+    private func lastLine() -> String {
+        let value = terminal().value as? String ?? ""
+        return value.split(separator: "\n").last.map(String.init) ?? ""
+    }
+
+    private func waitForLastLine(timeout: TimeInterval = 10, _ condition: (String) -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition(lastLine()) { return true }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+        return condition(lastLine())
+    }
+
+    /// Holding the software keyboard's delete key keeps deleting. iOS only repeats the key while
+    /// the input reports text, and SwiftTerm reports none for a line recalled from history, which
+    /// is why the hold used to stop after one character.
+    func testHoldingDeleteKeepsDeleting() throws {
+        let view = terminal()
+        view.tap()
+        let deleteKey = app.keys["delete"]
+        guard deleteKey.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Software keyboard did not appear (hardware keyboard connected?)")
+        }
+        app.typeText("echo one two three four five six seven-$((3+4))\n")
+        waitForText("seven-7")
+        XCTAssertTrue(waitForLastLine { !$0.isEmpty && !$0.contains("seven") }, lastLine())
+        let prompt = lastLine()
+
+        app.buttons["Up arrow"].tap()
+        XCTAssertTrue(waitForLastLine { $0.hasSuffix("seven-$((3+4))") }, lastLine())
+        deleteKey.press(forDuration: 6)
+        XCTAssertTrue(waitForLastLine { $0 == prompt }, "line left after holding delete: \(lastLine().debugDescription)")
+
+        app.typeText("echo delete-held-ok\n")
+        waitForText("delete-held-ok")
+    }
+
+    /// One Tab on a folder fills in the slash and lists what is inside it.
+    func testTabOnAFolderListsItsFiles() throws {
+        let view = terminal()
+        view.tap()
+        let tab = app.buttons["Tab"]
+        guard tab.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Software keyboard did not appear (hardware keyboard connected?)")
+        }
+        // The file names must not appear in anything typed, or the wait below proves nothing.
+        app.typeText("mkdir -p tabdemo && for n in alpha beta; do touch tabdemo/$n.sh; done; echo made-$((1+1))\n")
+        waitForText("made-2")
+        app.typeText("chmod +x tabde")
+        tab.tap()
+        waitForText("alpha.sh")
+        waitForText("beta.sh")
+        XCTAssertTrue(waitForLastLine { $0.hasSuffix("chmod +x tabdemo/") }, lastLine())
+        screenshot("09-tab-listing")
+
+        app.buttons["Control"].tap()
+        app.typeText("u")
+        app.typeText("rm -r tabdemo; echo gone-$((2+2))\n")
+        waitForText("gone-4")
+    }
+
     /// `mount Downloads` opens the system folder picker; choosing a folder links it at ~/mnt/Downloads,
     /// the link survives a relaunch, and umount removes it. The picker needs something to pick, so
     /// scripts/seed-simulator-downloads.sh must have put Downloads/tern-mount-check.txt into the

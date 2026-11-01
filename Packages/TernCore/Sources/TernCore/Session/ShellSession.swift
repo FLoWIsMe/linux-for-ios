@@ -708,6 +708,20 @@ public final class ShellSession: ShellHost {
         return true
     }
 
+    /// Deletes the word before the cursor at the prompt, as Alt-Backspace does. Returns true if the
+    /// line editor handled it; false while a command is running, so the caller can send a plain
+    /// backspace to the command instead. The terminal view calls this once the software keyboard's
+    /// delete key has been held long enough to speed up from characters to words.
+    @discardableResult
+    public func deleteWordBackward() -> Bool {
+        lock.lock()
+        let current = state
+        lock.unlock()
+        guard editorActive, case .prompt = current.mode else { return false }
+        process(editor.feed(key: .altBackspace))
+        return true
+    }
+
     /// The terminal was resized. Redraws the current line if the editor is active.
     public func resize(_ size: TerminalSize) {
         lock.lock()

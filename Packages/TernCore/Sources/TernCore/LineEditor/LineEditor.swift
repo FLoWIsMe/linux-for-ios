@@ -412,9 +412,13 @@ public final class LineEditor {
     }
 
     private func whitespaceWordStart(before position: Int) -> Int {
+        whitespaceWordStart(in: buffer, before: position)
+    }
+
+    private func whitespaceWordStart(in characters: [Character], before position: Int) -> Int {
         var index = position
-        while index > 0, buffer[index - 1].isWhitespace { index -= 1 }
-        while index > 0, !buffer[index - 1].isWhitespace { index -= 1 }
+        while index > 0, characters[index - 1].isWhitespace { index -= 1 }
+        while index > 0, !characters[index - 1].isWhitespace { index -= 1 }
         return index
     }
 
@@ -571,6 +575,14 @@ public final class LineEditor {
                 state.query.removeLast()
                 runSearch(&state, from: state.matchIndex ?? (history.entries.count - 1))
             }
+        case .altBackspace, .control("w"):
+            if !state.query.isEmpty {
+                var query = Array(state.query)
+                let start = whitespaceWordStart(in: query, before: query.count)
+                query.removeSubrange(start..<query.count)
+                state.query = String(query)
+                runSearch(&state, from: state.matchIndex ?? (history.entries.count - 1))
+            }
         case .control("r"):
             if let match = state.matchIndex {
                 runSearch(&state, from: match - 1)
@@ -640,25 +652,42 @@ public final class LineEditor {
 
     // MARK: Completion
 
+    /// Tab. One press does as much as it can and shows what is left, so nobody has to press twice:
+    /// a unique match is filled in; a unique directory is filled in and its contents are listed
+    /// right away; when several candidates remain, their common prefix is filled in and all of them
+    /// are listed under the line.
     private func complete() -> LineEditorOutput {
         guard let engine = completionEngine else { return LineEditorOutput(text: redraw()) }
         suggestionDismissed = true
-        let result = engine.complete(line: text, cursor: cursor, snapshot: snapshotProvider())
+        let snapshot = snapshotProvider()
+        let result = engine.complete(line: text, cursor: cursor, snapshot: snapshot)
         guard !result.candidates.isEmpty else {
             return LineEditorOutput(text: redraw())
         }
+        // Cursor movement below must be computed from the drawing on screen, so take it before the
+        // buffer changes.
+        let toEnd = renderer.moveToEnd(prompt: prompt, text: buffer, cursor: cursor, ghost: nil, columns: configuration.columns)
+
         if result.candidates.count == 1 {
             let candidate = result.candidates[0]
             replaceWord(result.wordRange, with: candidate.text + candidate.suffix)
-            return LineEditorOutput(text: redraw())
+            guard candidate.kind == .directory else { return LineEditorOutput(text: redraw()) }
+            let inside = engine.complete(line: text, cursor: cursor, snapshot: snapshot)
+            guard !inside.candidates.isEmpty else { return LineEditorOutput(text: redraw()) }
+            return listing(inside.candidates, movingToEnd: toEnd)
         }
         if result.commonPrefix.count > result.word.count, result.commonPrefix.hasPrefix(result.word) {
             replaceWord(result.wordRange, with: result.commonPrefix)
-            return LineEditorOutput(text: redraw())
         }
-        // No progress possible: list the candidates under the line and redraw.
-        let lines = CompletionEngine.formatListing(result.candidates, columns: configuration.columns, maxRows: configuration.listingRows)
-        var output = renderer.moveToEnd(prompt: prompt, text: buffer, cursor: cursor, ghost: nil, columns: configuration.columns)
+        return listing(result.candidates, movingToEnd: toEnd)
+    }
+
+    /// Prints the candidates under the line and redraws the line below them. `toEnd` moves the
+    /// cursor from where it was to the end of the text as drawn before any edit.
+    private func listing(_ candidates: [CompletionCandidate], movingToEnd toEnd: String) -> LineEditorOutput {
+        let lines = CompletionEngine.formatListing(candidates, columns: configuration.columns, maxRows: configuration.listingRows)
+        // Erase a grey suggestion that may trail the text before the listing takes its rows.
+        var output = toEnd + ANSI.eraseToEndOfScreen
         output += "\r\n" + lines.joined(separator: "\r\n") + "\r\n"
         renderer.reset()
         output += redraw()

@@ -13,7 +13,7 @@ import TernCore
 @MainActor
 final class TerminalSessionController: NSObject, Identifiable {
     let id = UUID()
-    let terminalView: TerminalView
+    let terminalView: TernTerminalView
     let session: ShellSession
     let executor: IOSSystemExecutor
     /// The session holds its output sink weakly, so the controller keeps the bridge alive.
@@ -42,7 +42,7 @@ final class TerminalSessionController: NSObject, Identifiable {
         options.scrollback = 10_000
         options.cursorStyle = settings.cursorShape.swiftTermStyle(blinking: settings.cursorBlinks)
         let font = settings.font.uiFont(size: settings.fontSize)
-        terminalView = TerminalView(frame: CGRect(x: 0, y: 0, width: 320, height: 480), font: font, options: options)
+        terminalView = TernTerminalView(frame: CGRect(x: 0, y: 0, width: 320, height: 480), font: font, options: options)
         terminalView.accessibilityIdentifier = "terminal"
         terminalView.accessibilityLabel = "Terminal"
 
@@ -74,6 +74,7 @@ final class TerminalSessionController: NSObject, Identifiable {
         session.delegate = self
         session.hostCommands = hostCommands
         terminalView.terminalDelegate = self
+        terminalView.deleteWordBackward = { [weak self] in self?.session.deleteWordBackward() ?? false }
         terminalView.optionAsMetaKey = settings.optionAsMeta
         terminalView.allowMouseReporting = true
         terminalView.bellStyle = .sound

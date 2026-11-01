@@ -24,8 +24,9 @@ class citizen.
   globbing, heredocs, `[[ ]]`, brace expansion. `sh script.sh` runs scripts with a real dash.
 * **A keyboard made for a shell.** A bar with esc, tab, ctrl, alt, arrows and the symbols you need,
   with latching modifiers and press and hold repeat. Hardware keyboards get every shortcut.
-* **Fish style editing.** Tab completion with candidate lists, Ctrl-R history search, grey inline
-  suggestions, syntax highlighting as you type, git branch in the prompt.
+* **Fish style editing.** One Tab completes and lists what matches (a folder shows what is inside
+  it), Ctrl-R history search, grey inline suggestions, syntax highlighting as you type, git branch
+  in the prompt. Holding delete speeds up from characters to words like any iOS text field.
 * **Light and dark, properly.** Eleven terminal palettes, three fonts, a chrome that follows the
   system or your choice.
 * **Files you can reach.** Home is the app's Documents folder, visible in the Files app, and

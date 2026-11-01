@@ -32,7 +32,7 @@ struct OnboardingView: View {
 
                 OnboardingPage(
                     title: "Keys you actually need.",
-                    text: "A bar above the keyboard adds esc, tab, ctrl, alt and arrows. Ctrl latches: tap ctrl, then c. Tab completes. Hold an arrow to repeat."
+                    text: "A bar above the keyboard adds esc, tab, ctrl, alt and arrows. Ctrl latches: tap ctrl, then c. Tab completes and lists. Hold an arrow or delete to repeat."
                 ) { KeyboardPreview(model: model.keyboardBar) }
                 .tag(1)
 
@@ -193,7 +193,7 @@ private struct KeyboardPreview: View {
             .background(ChromeColor.surfaceElevated, in: RoundedRectangle(cornerRadius: Metrics.radiusControl, style: .continuous))
             VStack(alignment: .leading, spacing: 10) {
                 tip(key: "ctrl", text: "then c stops a command, then r searches history")
-                tip(key: "tab", text: "completes commands and paths, twice lists options")
+                tip(key: "tab", text: "completes commands and paths and lists what matches")
                 tip(key: "\u{2191}", text: "recalls history, or searches it for what you typed")
             }
         }
