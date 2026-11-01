@@ -36,6 +36,7 @@
 		8CAFA56EDF8661042094300E /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 0FBD5809B2F673175E4D42FE /* SwiftTerm */; };
 		8ED22E0852677F0A7F75752A /* SSHConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A78CCE8E8F0A321AC60780B /* SSHConfigTests.swift */; };
 		928C8EEB67C58D046F96C343 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA9665EEBC3D086FDA5524C /* OnboardingView.swift */; };
+		97D7AC41E75C23A9A1AFD74F /* TernTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC9C3BEADACD02EFFA6F70A9 /* TernTerminalView.swift */; };
 		97F0C7C3D610BBC9D07F7251 /* TernSupport.c in Sources */ = {isa = PBXBuildFile; fileRef = 88E3C4EA3E144D12F34AF4A7 /* TernSupport.c */; };
 		9C889819D64617D0A7CD7347 /* TernSupport.h in Headers */ = {isa = PBXBuildFile; fileRef = 511D0C6207B50F2B2CB4B620 /* TernSupport.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9D4FEDE33CF5A294DF4A0D4F /* vimconfig in Resources */ = {isa = PBXBuildFile; fileRef = 3C1F32D30A380CE6DC280E33 /* vimconfig */; };
@@ -135,6 +136,7 @@
 		C6B1962F97D1AE340138E9E8 /* Tern.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tern.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6E139CE27E9775E10468782 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		C7827AB2CA9A03E7913C9CE6 /* TernSupport.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TernSupport.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC9C3BEADACD02EFFA6F70A9 /* TernTerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TernTerminalView.swift; sourceTree = "<group>"; };
 		DCF9390C092415638506FA78 /* SettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStoreTests.swift; sourceTree = "<group>"; };
 		DDF7BD8CA737374BE51186E9 /* TernUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TernUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEC07D6BFB65C7F7AE378F90 /* AnthropicClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicClient.swift; sourceTree = "<group>"; };
@@ -324,6 +326,7 @@
 				588E76D8667950408A18D04B /* TerminalHostView.swift */,
 				E3E67624AD88007B5E0B063F /* TerminalScreen.swift */,
 				95B2A2A11F5DAA96B6EFB909 /* TerminalSessionController.swift */,
+				CC9C3BEADACD02EFFA6F70A9 /* TernTerminalView.swift */,
 			);
 			path = Terminal;
 			sourceTree = "<group>";
@@ -623,6 +626,7 @@
 				ABAECCF28E3E9DFDB51E2634 /* TernApp.swift in Sources */,
 				485F9CA6FF26F2B541EBD5B2 /* TernHostCommands.swift in Sources */,
 				AA2DF17C7B0401E2493B3212 /* TernSystemBridge.m in Sources */,
+				97D7AC41E75C23A9A1AFD74F /* TernTerminalView.swift in Sources */,
 				165FD80BFC7E69838F16F2AF /* Theme.swift in Sources */,
 				4561F69CC379F070DA1EDF16 /* URLCommands.swift in Sources */,
 			);
