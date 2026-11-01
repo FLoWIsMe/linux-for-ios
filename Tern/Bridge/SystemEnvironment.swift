@@ -98,6 +98,8 @@ enum SystemEnvironment {
         fm.changeCurrentDirectoryPath(home)
         installDefaultDotfiles()
         installUITestingKey()
+        // Reopen folders mounted with `mount` so ~/mnt works before the first shell starts.
+        MountStore.shared.restoreAll()
     }
 
     /// Copies the key named by `-ui-ssh-key` into ~/.ssh for the UI tests (no-op otherwise).

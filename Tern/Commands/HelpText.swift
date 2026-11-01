@@ -16,6 +16,8 @@ enum HelpText {
             return git
         case "files":
             return files
+        case "mount", "mounts", "umount":
+            return mount
         case "shell", "scripting":
             return shell
         case "commands", "list":
@@ -36,7 +38,7 @@ enum HelpText {
         \(bold)Network\(reset)   ssh, scp, sftp, ssh-keygen, curl, ping, dig, nslookup, whois, nc
         \(bold)Git\(reset)       lg2 clone/pull/push/commit/log (type \(bold)help git\(reset))
         \(bold)Scripts\(reset)   sh and dash for POSIX scripts, lua, bc, make, awk
-        \(bold)App\(reset)       tern (themes, fonts), open, pbcopy, pbpaste, keys, hosts, settings, newtab
+        \(bold)App\(reset)       tern (themes, fonts), open, mount, pbcopy, pbpaste, keys, hosts, settings, newtab
 
         \(bold)Shortcuts\(reset)
           Tab          complete commands and paths (press twice to list)
@@ -47,8 +49,9 @@ enum HelpText {
           Ctrl-L       clear the screen
           Right arrow  accept the grey suggestion
 
-        \(bold)More\(reset)      help keys, help ssh, help git, help files, help shell, help commands
-        \(dim)Home is ~ which is this app's Documents folder. Open it in the Files app with: open .\(reset)
+        \(bold)More\(reset)      help keys, help ssh, help git, help files, help mount, help shell, help commands
+        \(dim)Home is ~ which is this app's Documents folder. Open it in the Files app with: open .
+        Other folders, like Downloads, attach under ~/mnt with: mount Downloads\(reset)
 
         """
     }
@@ -130,9 +133,30 @@ enum HelpText {
           pbpaste > f     write the clipboard to a file
           curl -O URL     download a file
           tar xzf a.tgz   unpack an archive
+          mount Downloads attach a folder from Files at ~/mnt/Downloads (help mount)
 
         Dotfiles live in ~ too: ~/.ternrc runs when a tab opens, ~/.vimrc configures vim,
         ~/.ssh holds keys and config, ~/.tern_history is your command history.
+
+        """
+    }
+
+    static var mount: String {
+        """
+        \(bold)Mount\(reset)
+
+        Folders outside Tern, such as Downloads, iCloud Drive or another app's folder, can be
+        attached under ~/mnt. Pick the folder once; the mount stays across restarts.
+
+          mount Downloads     choose a folder in Files; it appears at ~/mnt/Downloads
+          cd ~/mnt/Downloads  work there like in any other directory
+          mount               list mounted folders
+          umount Downloads    detach it again (nothing inside the folder is deleted)
+
+        iOS only lets an app reach folders you choose yourself, which is why every mount starts
+        with the picker. Safari's downloads are in iCloud Drive > Downloads unless you changed
+        Settings > Safari > Downloads to On My iPhone. Files in iCloud that have not been downloaded
+        show up as .name.icloud; opening them once in Files downloads them.
 
         """
     }
@@ -166,7 +190,7 @@ enum HelpText {
         \(bold)Network\(reset)    ssh scp sftp ssh-keygen ssh-add curl ping ping6 dig host nslookup whois nc telnet ifconfig
         \(bold)Dev\(reset)        vim lg2 (git) lua luac make bc dc jsc dash sh
         \(bold)System\(reset)     env printenv export date uname uptime whoami id sleep stty say open
-        \(bold)App\(reset)        tern help keys hosts settings newtab pbcopy pbpaste history clear
+        \(bold)App\(reset)        tern help mount umount open keys hosts settings newtab pbcopy pbpaste history clear
 
         """
     }

@@ -167,4 +167,53 @@ final class TernUITests: XCTestCase {
         app.typeText("\n")
         screenshot("08-keyboard-history")
     }
+
+    /// `mount Downloads` opens the system folder picker; choosing a folder links it at ~/mnt/Downloads,
+    /// the link survives a relaunch, and umount removes it. The picker needs something to pick, so
+    /// scripts/seed-simulator-downloads.sh must have put Downloads/tern-mount-check.txt into the
+    /// Simulator's On My iPhone storage first; the test skips when it finds no Downloads folder.
+    func testMountAttachesAFolderFromFiles() throws {
+        _ = terminal()
+        type("umount Downloads >/dev/null 2>&1; mount Downloads\n")
+
+        // The picker is a remote view controller; XCUITest sees its controls as part of this app.
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 10), "Folder picker did not appear")
+        screenshot("10-mount-picker")
+
+        let downloads = app.staticTexts["Downloads"].firstMatch
+        if !downloads.waitForExistence(timeout: 3) {
+            // The picker remembers the last location; go to the top level of local storage.
+            let browse = app.buttons["Browse"].firstMatch
+            if browse.exists { browse.tap() }
+            let local = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'On My'")).firstMatch
+            if local.waitForExistence(timeout: 3) { local.tap() }
+        }
+        guard downloads.waitForExistence(timeout: 5) else {
+            cancel.tap()
+            throw XCTSkip("No Downloads folder in the Simulator's Files storage; run scripts/seed-simulator-downloads.sh")
+        }
+        downloads.tap()
+        let open = app.buttons["Open"].firstMatch
+        XCTAssertTrue(open.waitForExistence(timeout: 5), "Folder picker has no Open button")
+        open.tap()
+
+        waitForText("at ~/mnt/Downloads")
+        type("cat ~/mnt/Downloads/tern-mount-check.txt\n")
+        waitForText("mount-check-ok")
+        type("mount\n")
+        waitForText("~/mnt/Downloads")
+        screenshot("11-mounted")
+
+        // The bookmark must bring the folder back after a relaunch.
+        app.terminate()
+        app.launch()
+        type("cat ~/mnt/Downloads/tern-mount-check.txt && echo relaunch-$((40+2))\n")
+        waitForText("relaunch-42")
+
+        type("umount Downloads\n")
+        waitForText("Unmounted ~/mnt/Downloads")
+        type("ls ~/mnt/Downloads 2>&1 | head -1; echo gone-$((40+3))\n")
+        waitForText("gone-43")
+    }
 }

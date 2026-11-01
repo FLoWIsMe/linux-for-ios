@@ -38,7 +38,7 @@ struct OnboardingView: View {
 
                 OnboardingPage(
                     title: "Your files, in Files.",
-                    text: "Home is this app's Documents folder. It shows up in the Files app, so you can drop files in, edit them with vim, and sync repositories with git."
+                    text: "Home is this app's Documents folder. It shows up in the Files app, so you can drop files in, edit them with vim, and sync repositories with git. Type mount to attach Downloads or any other folder."
                 ) { FilesPreview() }
                 .tag(2)
 

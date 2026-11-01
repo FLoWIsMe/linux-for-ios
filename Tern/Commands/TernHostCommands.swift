@@ -3,7 +3,7 @@ import UIKit
 import TernCore
 
 /// Commands that live in the app rather than in the shell or the toolchain: `help`, `tern`, `open`,
-/// `pbcopy`, `pbpaste`, `history`, `clear`, `keys`, `hosts`, `settings`, `newtab`.
+/// `pbcopy`, `pbpaste`, `history`, `clear`, `keys`, `hosts`, `settings`, `newtab`, `mount`, `umount`.
 ///
 /// `runHostCommand` is called on the shell thread. Anything that touches UI hops to the main actor.
 final class TernHostCommands: HostCommandProvider {
@@ -13,7 +13,7 @@ final class TernHostCommands: HostCommandProvider {
         self.model = model
     }
 
-    let hostCommandNames: [String] = ["help", "tern", "open", "pbcopy", "pbpaste", "history", "clear", "keys", "hosts", "settings", "newtab", "about"]
+    let hostCommandNames: [String] = ["help", "tern", "open", "pbcopy", "pbpaste", "history", "clear", "keys", "hosts", "settings", "newtab", "about", "mount", "umount"]
 
     func runHostCommand(_ argv: [String], io: ShellIO, session: ShellSession) -> Int32? {
         guard let name = argv.first else { return nil }
@@ -58,8 +58,113 @@ final class TernHostCommands: HostCommandProvider {
                 _ = model?.newSession(workingDirectory: directory, initialCommand: command)
             }
             return 0
+        case "mount":
+            return mountCommand(arguments, io: io)
+        case "umount":
+            return unmountCommand(arguments, io: io)
         default:
             return nil
+        }
+    }
+
+    // MARK: mount
+
+    private static let dim = "\u{1b}[2m"
+    private static let reset = "\u{1b}[0m"
+
+    private func mountCommand(_ arguments: [String], io: ShellIO) -> Int32 {
+        let store = MountStore.shared
+        guard let first = arguments.first else {
+            let entries = store.entries()
+            if entries.isEmpty {
+                io.writeOut("""
+                Nothing is mounted. Attach a folder from the Files app with
+
+                  mount Downloads
+
+                It then appears at ~/mnt/Downloads. Type help mount for more.
+
+                """)
+                return 0
+            }
+            let width = entries.map { $0.mountPoint.count }.max() ?? 0
+            for entry in entries {
+                let point = entry.mountPoint.padding(toLength: width, withPad: " ", startingAt: 0)
+                let note = entry.isAvailable ? "" : "  \(Self.dim)(unavailable: the folder was moved or deleted)\(Self.reset)"
+                io.writeOut("\(point)  \(entry.location)\(note)\n")
+            }
+            return 0
+        }
+        if ["-h", "--help", "help"].contains(first) {
+            io.writeOut(HelpText.mount)
+            return 0
+        }
+        if first.hasPrefix("-") {
+            io.writeErr("mount: unknown option \(first)\nusage: mount [name]   umount <name>\n")
+            return 2
+        }
+        if arguments.count > 1 {
+            io.writeErr("usage: mount [name]\n  mount            list mounted folders\n  mount Downloads  pick a folder in Files; it appears at ~/mnt/Downloads\n")
+            return 2
+        }
+        let name = first
+        do {
+            try MountStore.validate(name: name)
+        } catch {
+            io.writeErr("mount: \(error.localizedDescription)\n")
+            return 2
+        }
+        if store.isMounted(name) {
+            io.writeErr("mount: \(MountStore.MountError.alreadyMounted(name).localizedDescription)\n")
+            return 1
+        }
+
+        io.writeOut("\(Self.dim)Choose a folder in Files...\(Self.reset)\n")
+        let finished = DispatchSemaphore(value: 0)
+        var picked: URL?
+        DispatchQueue.main.async {
+            FolderPicker.present { url in
+                picked = url
+                finished.signal()
+            }
+        }
+        finished.wait()
+        // The picker took the keyboard with it; give it back to the terminal once the sheet is gone.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak model] in
+            model?.selected?.focus()
+        }
+        guard let url = picked else {
+            io.writeErr("mount: cancelled\n")
+            return 1
+        }
+        do {
+            let entry = try store.mount(name: name, url: url)
+            io.writeOut("Mounted \(entry.location) at \(entry.mountPoint)\n")
+            io.writeOut("\(Self.dim)cd \(entry.mountPoint) to work there. umount \(name) detaches it again.\(Self.reset)\n")
+            if entry.isCloud {
+                io.writeOut("\(Self.dim)iCloud files that are not downloaded yet show as .name.icloud; opening them once in Files downloads them.\(Self.reset)\n")
+            }
+            return 0
+        } catch {
+            io.writeErr("mount: \(error.localizedDescription)\n")
+            return 1
+        }
+    }
+
+    private func unmountCommand(_ arguments: [String], io: ShellIO) -> Int32 {
+        guard arguments.count == 1, !arguments[0].hasPrefix("-") else {
+            io.writeErr("usage: umount <name>\n  umount Downloads  detach ~/mnt/Downloads (nothing inside it is deleted)\n")
+            return 2
+        }
+        // Accept the mount point spelled out, too: umount ~/mnt/Downloads, umount mnt/Downloads.
+        let name = arguments[0].split(separator: "/").last.map(String.init) ?? arguments[0]
+        do {
+            try MountStore.shared.unmount(name: name)
+            io.writeOut("Unmounted ~/mnt/\(name)\n")
+            return 0
+        } catch {
+            io.writeErr("umount: \(error.localizedDescription)\n")
+            return 1
         }
     }
 
