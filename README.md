@@ -45,6 +45,10 @@ class citizen.
   <img src="docs/screenshots/settings.png" width="230" alt="Settings with palette previews">
   <img src="docs/screenshots/keys.png" width="230" alt="The SSH keys screen">
 </p>
+<p align="center">
+  <img src="docs/screenshots/mount.png" width="230" alt="mount Downloads opens the Files folder picker">
+  <img src="docs/screenshots/mounted.png" width="230" alt="The Downloads folder in use at ~/mnt/Downloads">
+</p>
 
 ## Build it
 
