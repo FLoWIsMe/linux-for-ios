@@ -62,6 +62,9 @@ public final class LineEditor {
     public private(set) var prompt: RenderedPrompt = .empty
     public private(set) var isActive = false
 
+    /// True when a grey autosuggestion is currently shown and can be accepted (e.g. by a tap).
+    public var hasActiveSuggestion: Bool { isActive && currentSuggestion != nil }
+
     // History navigation.
     private var historyIndex: Int? = nil
     private var historyPrefix: [Character] = []

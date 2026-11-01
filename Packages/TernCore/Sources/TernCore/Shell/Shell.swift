@@ -168,7 +168,7 @@ public final class Shell {
         return running
     }
 
-    var isInterrupted: Bool {
+    public var isInterrupted: Bool {
         stateLock.lock(); defer { stateLock.unlock() }
         return interrupted
     }

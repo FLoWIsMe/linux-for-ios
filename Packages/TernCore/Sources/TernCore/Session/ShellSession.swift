@@ -696,6 +696,18 @@ public final class ShellSession: ShellHost {
         handleInput(Array(text.utf8))
     }
 
+    /// Accepts the grey autosuggestion, if one is showing at the prompt. Returns true if it did.
+    /// Used by the terminal view so a tap on the suggestion fills it in, the same as pressing Right.
+    @discardableResult
+    public func acceptAutosuggestion() -> Bool {
+        lock.lock()
+        let current = state
+        lock.unlock()
+        guard editorActive, case .prompt = current.mode, editor.hasActiveSuggestion else { return false }
+        process(editor.feed(key: .end))
+        return true
+    }
+
     /// The terminal was resized. Redraws the current line if the editor is active.
     public func resize(_ size: TerminalSize) {
         lock.lock()

@@ -89,6 +89,28 @@ final class TerminalSessionController: NSObject, Identifiable {
         applyPalette(palette)
         title = "~"
         session.start()
+        installSuggestionTap()
+    }
+
+    /// A tap on the terminal accepts the grey autosuggestion when one is showing, so people can fill
+    /// it in by tapping instead of reaching for the Right arrow. It runs alongside SwiftTerm's own
+    /// tap handling (focus, links, selection) and only does anything while a suggestion is visible.
+    private func installSuggestionTap() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleSuggestionTap(_:)))
+        tap.delegate = self
+        tap.cancelsTouchesInView = false
+        // Don't fire when the user is double or triple tapping to select text.
+        for recognizer in terminalView.gestureRecognizers ?? [] {
+            if let tapRecognizer = recognizer as? UITapGestureRecognizer, tapRecognizer.numberOfTapsRequired >= 2 {
+                tap.require(toFail: tapRecognizer)
+            }
+        }
+        terminalView.addGestureRecognizer(tap)
+    }
+
+    @objc private func handleSuggestionTap(_ gesture: UITapGestureRecognizer) {
+        guard gesture.state == .ended else { return }
+        session.acceptAutosuggestion()
     }
 
     deinit {
@@ -225,6 +247,15 @@ extension TerminalSessionController: TerminalViewDelegate {
     func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {}
 
     func rangeChanged(source: TerminalView, startY: Int, endY: Int) {}
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension TerminalSessionController: UIGestureRecognizerDelegate {
+    nonisolated func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                                       shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+        true
+    }
 }
 
 // MARK: - ShellSessionDelegate

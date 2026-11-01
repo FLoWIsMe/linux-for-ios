@@ -18,6 +18,8 @@ enum HelpText {
             return files
         case "mount", "mounts", "umount":
             return mount
+        case "claude", "ai":
+            return claude
         case "shell", "scripting":
             return shell
         case "commands", "list":
@@ -38,6 +40,7 @@ enum HelpText {
         \(bold)Network\(reset)   ssh, scp, sftp, ssh-keygen, curl, ping, dig, nslookup, whois, nc
         \(bold)Git\(reset)       lg2 clone/pull/push/commit/log (type \(bold)help git\(reset))
         \(bold)Scripts\(reset)   sh and dash for POSIX scripts, lua, bc, make, awk
+        \(bold)AI\(reset)        claude (Claude in your terminal, type \(bold)help claude\(reset))
         \(bold)App\(reset)       tern (themes, fonts), open, mount, pbcopy, pbpaste, keys, hosts, settings, newtab
 
         \(bold)Shortcuts\(reset)
@@ -49,7 +52,7 @@ enum HelpText {
           Ctrl-L       clear the screen
           Right arrow  accept the grey suggestion
 
-        \(bold)More\(reset)      help keys, help ssh, help git, help files, help mount, help shell, help commands
+        \(bold)More\(reset)      help keys, help ssh, help git, help files, help mount, help claude, help commands
         \(dim)Home is ~ which is this app's Documents folder. Open it in the Files app with: open .
         Other folders, like Downloads, attach under ~/mnt with: mount Downloads\(reset)
 
@@ -190,7 +193,32 @@ enum HelpText {
         \(bold)Network\(reset)    ssh scp sftp ssh-keygen ssh-add curl ping ping6 dig host nslookup whois nc telnet ifconfig
         \(bold)Dev\(reset)        vim lg2 (git) lua luac make bc dc jsc dash sh
         \(bold)System\(reset)     env printenv export date uname uptime whoami id sleep stty say open
+        \(bold)AI\(reset)         claude
         \(bold)App\(reset)        tern help mount umount open keys hosts settings newtab pbcopy pbpaste history clear
+
+        """
+    }
+
+    static var claude: String {
+        """
+        \(bold)Claude\(reset)
+
+        Claude is built in. Type \(bold)claude\(reset) to chat, or give it a task on one line. It can run
+        commands and read and write files for you, asking before each change.
+
+          claude login            paste your Anthropic API key once (stored in the Keychain)
+          claude                  start a chat; type exit to leave
+          claude "fix the typo in notes.md"   one task, then back to the shell
+          cat error.log | claude  pipe text in as the prompt
+          claude -y "..."         skip the per-step confirmations for this run
+          claude model            show the model; claude model <id> to change it
+          claude logout           remove the stored key
+
+        Make a key at https://console.anthropic.com/settings/keys. You can also set it with
+        export ANTHROPIC_API_KEY=sk-ant-... in ~/.ternrc. Usage is billed to your Anthropic account.
+        Claude runs commands in your current directory and always asks before running or writing
+        (answer a to allow the rest of the run). The curl install.sh installer for Claude Code does
+        not work on iOS, there is no Node or process spawning; this built-in claude is the iOS way.
 
         """
     }

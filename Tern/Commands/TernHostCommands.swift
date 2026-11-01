@@ -13,7 +13,7 @@ final class TernHostCommands: HostCommandProvider {
         self.model = model
     }
 
-    let hostCommandNames: [String] = ["help", "tern", "open", "pbcopy", "pbpaste", "history", "clear", "keys", "hosts", "settings", "newtab", "about", "mount", "umount"]
+    let hostCommandNames: [String] = ["help", "tern", "open", "pbcopy", "pbpaste", "history", "clear", "keys", "hosts", "settings", "newtab", "about", "mount", "umount", "claude"]
 
     func runHostCommand(_ argv: [String], io: ShellIO, session: ShellSession) -> Int32? {
         guard let name = argv.first else { return nil }
@@ -62,9 +62,116 @@ final class TernHostCommands: HostCommandProvider {
             return mountCommand(arguments, io: io)
         case "umount":
             return unmountCommand(arguments, io: io)
+        case "claude":
+            return claudeCommand(arguments, io: io, session: session)
         default:
             return nil
         }
+    }
+
+    // MARK: claude
+
+    private func claudeCommand(_ arguments: [String], io: ShellIO, session: ShellSession) -> Int32 {
+        switch arguments.first {
+        case "login", "auth":
+            return claudeLogin(io: io, session: session)
+        case "logout":
+            if ClaudeCredentials.apiKeyIsFromEnvironment {
+                io.writeErr("claude: the key comes from ANTHROPIC_API_KEY; unset that variable to remove it.\n")
+                return 1
+            }
+            _ = ClaudeCredentials.remove()
+            io.writeOut("Signed out. Your API key was removed from the Keychain.\n")
+            return 0
+        case "model":
+            let rest = Array(arguments.dropFirst())
+            if let value = rest.first {
+                ClaudeConfig.setModel(value)
+                io.writeOut("Default model set to \(value)\n")
+            } else {
+                io.writeOut("\(ClaudeConfig.model)\n")
+            }
+            return 0
+        case "help", "--help", "-h":
+            io.writeOut(HelpText.claude)
+            return 0
+        default:
+            break
+        }
+
+        // Flags, then the rest of the words are the prompt.
+        var autoApprove = false
+        var model = ClaudeConfig.model
+        var promptWords: [String] = []
+        var index = 0
+        let words = arguments
+        while index < words.count {
+            let word = words[index]
+            switch word {
+            case "-y", "--yes":
+                autoApprove = true
+            case "-p", "--print":
+                break
+            case "--model":
+                if index + 1 < words.count { model = words[index + 1]; index += 1 }
+            default:
+                promptWords.append(word)
+            }
+            index += 1
+        }
+
+        guard let apiKey = ClaudeCredentials.apiKey else {
+            io.writeErr("""
+            claude: no API key yet. Set one up with
+
+              \u{1b}[1mclaude login\u{1b}[0m
+
+            and paste your Anthropic API key (it starts with sk-ant-). You can create one at
+            https://console.anthropic.com/settings/keys. The key is stored in the device Keychain.
+
+            """)
+            return 1
+        }
+
+        var prompt = promptWords.joined(separator: " ")
+        // With no prompt words but piped input, read the prompt from stdin.
+        if prompt.isEmpty, isatty(io.stdin) == 0 {
+            let piped = String(decoding: FileDescriptorIO.readAll(io.stdin), as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            prompt = piped
+        }
+
+        let agent = ClaudeAgent(io: io, session: session, model: model,
+                                baseURL: ClaudeConfig.baseURL, apiKey: apiKey, autoApprove: autoApprove)
+        if prompt.isEmpty {
+            return agent.runREPL()
+        }
+        return agent.runOnce(prompt)
+    }
+
+    private func claudeLogin(io: ShellIO, session: ShellSession) -> Int32 {
+        if ClaudeCredentials.apiKeyIsFromEnvironment {
+            io.writeOut("ANTHROPIC_API_KEY is set, so that key is already in use. Storing one here is optional.\n")
+        }
+        guard let key = session.readLine(prompt: "Paste your Anthropic API key (hidden): ", secure: true) else {
+            io.writeErr("\nclaude: cancelled.\n")
+            return 1
+        }
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            io.writeErr("claude: no key entered.\n")
+            return 1
+        }
+        guard trimmed.hasPrefix("sk-ant-") else {
+            io.writeErr("claude: that does not look like an Anthropic key (they start with sk-ant-). Nothing saved.\n")
+            return 1
+        }
+        if ClaudeCredentials.store(trimmed) {
+            io.writeOut("Saved. Try it with: claude \"what files are here?\"\n")
+            return 0
+        }
+        io.writeErr("claude: could not save the key to the Keychain.\n")
+        return 1
     }
 
     // MARK: mount
