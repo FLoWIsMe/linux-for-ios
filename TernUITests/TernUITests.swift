@@ -219,4 +219,92 @@ final class TernUITests: XCTestCase {
         type("ls ~/mnt/Downloads 2>&1 | head -1; echo gone-$((40+3))\n")
         waitForText("gone-43")
     }
+
+    func testPasteRunsACommand() {
+        let view = terminal()
+        view.tap()
+        UIPasteboard.general.string = "echo paste-runs-123"
+        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        view.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).press(forDuration: 1.0)
+        let paste = app.menuItems["Paste"].firstMatch
+        XCTAssertTrue(paste.waitForExistence(timeout: 5), "Paste was not offered")
+        paste.tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.8))
+        app.typeText("\n")
+        waitForText("paste-runs-123")
+        screenshot("12-paste")
+    }
+
+    func testSelectAndCopy() {
+        let view = terminal()
+        view.tap()
+        app.typeText("echo copyword-9\n")
+        waitForText("copyword-9")
+        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        // Standard iOS flow: long-press, Select the word, then Copy.
+        view.coordinate(withNormalizedOffset: CGVector(dx: 0.14, dy: 0.085)).press(forDuration: 1.0)
+        let select = app.menuItems["Select"].firstMatch
+        XCTAssertTrue(select.waitForExistence(timeout: 5), "Select was not offered")
+        select.tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.9))
+        let copy = app.menuItems["Copy"].firstMatch
+        XCTAssertTrue(copy.waitForExistence(timeout: 5), "Copy was not offered after Select")
+        copy.tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.8))
+        // The test runner cannot read the pasteboard, so let the app read it back.
+        app.typeText("pbpaste\n")
+        waitForText("copyword-9", timeout: 6)
+    }
+
+    func testTapAcceptsAutosuggestion() {
+        let view = terminal()
+        view.tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        app.typeText("echo kiwi-55\n")
+        waitForText("kiwi-55")
+        app.typeText("echo ki")
+        RunLoop.current.run(until: Date().addingTimeInterval(0.6))
+        view.tap()                       // tapping the grey suggestion fills it in
+        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        app.typeText(" tapped\n")
+        // Proves the suggestion was accepted: the command ran as "echo kiwi-55 tapped".
+        waitForText("kiwi-55 tapped")
+        screenshot("13-tap-suggestion")
+    }
+
+    /// Exercises the full `claude` tool loop against a local mock Anthropic server. Skips unless the
+    /// mock from scripts/mock-anthropic.py is running on 127.0.0.1:8099, so CI stays green.
+    func testClaudeRunsAToolThroughTheAPI() throws {
+        guard mockAPIReachable() else {
+            throw XCTSkip("Start scripts/mock-anthropic.py on 127.0.0.1:8099 to run the claude API test")
+        }
+        let claude = XCUIApplication()
+        claude.launchArguments = ["-onboarding.completed", "YES", "-terminal.cursorBlinks", "NO", "-ui-testing",
+                                  "-ui-command", "claude -y 'please run the echo'"]
+        claude.launchEnvironment["ANTHROPIC_BASE_URL"] = "http://127.0.0.1:8099"
+        claude.launchEnvironment["ANTHROPIC_API_KEY"] = "sk-ant-test"
+        claude.launch()
+        let view = claude.descendants(matching: .any).matching(identifier: "terminal").firstMatch
+        XCTAssertTrue(view.waitForExistence(timeout: 10))
+        let deadline = Date().addingTimeInterval(20)
+        while Date() < deadline {
+            let value = view.value as? String ?? ""
+            if value.contains("hello-from-claude") && value.contains("All done") { return }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+        }
+        XCTFail("claude did not complete the tool round trip")
+    }
+
+    private func mockAPIReachable() -> Bool {
+        var reachable = false
+        let semaphore = DispatchSemaphore(value: 0)
+        var request = URLRequest(url: URL(string: "http://127.0.0.1:8099/")!)
+        request.timeoutInterval = 1.5
+        URLSession.shared.dataTask(with: request) { _, response, _ in
+            reachable = response != nil
+            semaphore.signal()
+        }.resume()
+        _ = semaphore.wait(timeout: .now() + 2)
+        return reachable
+    }
 }

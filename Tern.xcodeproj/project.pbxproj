@@ -11,11 +11,13 @@
 		08FE3B3170F21C40B6B0F944 /* SSHKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 086A362314DB77B7EECC4A73 /* SSHKeyStore.swift */; };
 		092FB688B2EED388DC143BD7 /* ios_system.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 9F9217ED4701123753F704B0 /* ios_system.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		0EE2236C2CD86E3F78A3C7B3 /* terminfo in Resources */ = {isa = PBXBuildFile; fileRef = 0D089B02A772D5882CCD2F44 /* terminfo */; };
+		145D7D457AD3271DDD8F3574 /* ClaudeCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DD0B3F05AA897E183EC18EA /* ClaudeCredentials.swift */; };
 		165FD80BFC7E69838F16F2AF /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C0D3116FAAAFA0FE393820 /* Theme.swift */; };
 		2A5B18537F6A8DE38C79B6AF /* TerminalSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B2A2A11F5DAA96B6EFB909 /* TerminalSessionController.swift */; };
 		36358DFCF5769B1AD8D09FC5 /* KeyboardBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A32BDBDA1E857789BE0D7D /* KeyboardBar.swift */; };
 		36E0B614D3048F9DD3D358AB /* TernSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7827AB2CA9A03E7913C9CE6 /* TernSupport.framework */; };
 		37ED250CEBFFB6AD7924D93E /* TernSupport.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C7827AB2CA9A03E7913C9CE6 /* TernSupport.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		3B5CE37FA88490FF256ADC54 /* AnthropicClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC07D6BFB65C7F7AE378F90 /* AnthropicClient.swift */; };
 		41A28A943AC8632C80A8AB79 /* cacert.pem in Resources */ = {isa = PBXBuildFile; fileRef = F0F7626FAE92F42FFE7B9FC0 /* cacert.pem */; };
 		4296CE0C06D77A1D020919A0 /* TerminalHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588E76D8667950408A18D04B /* TerminalHostView.swift */; };
 		4561F69CC379F070DA1EDF16 /* URLCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB55CF67B3D33C107AFCE430 /* URLCommands.swift */; };
@@ -43,6 +45,7 @@
 		BC01CFAABB47542F1E729A3D /* commandDictionary.plist in Resources */ = {isa = PBXBuildFile; fileRef = 2D09AF6B0BEABB5EE07D4FCB /* commandDictionary.plist */; };
 		BE4C085AB9973D418DCAC78C /* IOSSystemExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643980EA6F8D40DE7BA36720 /* IOSSystemExecutor.swift */; };
 		CB728E73A56E7B6471BC761D /* HostsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D86249314B11C310C44DC52 /* HostsView.swift */; };
+		DD092779D24A161B9AE6294B /* ClaudeAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CCB473BEFB6FF8B63CC1921 /* ClaudeAgent.swift */; };
 		EAE0C3D70148F6970440AAC2 /* ios_system.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F9217ED4701123753F704B0 /* ios_system.xcframework */; };
 		FA4AA5B7ABD6E323E0B87060 /* SSHConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012024CB1346BE4D358B07AC /* SSHConfig.swift */; };
 		FC90CA71474E21BB6852F0FB /* MountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFFD0A809521BF71F48BC53 /* MountStore.swift */; };
@@ -96,6 +99,7 @@
 		0D089B02A772D5882CCD2F44 /* terminfo */ = {isa = PBXFileReference; lastKnownFileType = folder; name = terminfo; path = Tern/Resources/terminfo; sourceTree = SOURCE_ROOT; };
 		0D86249314B11C310C44DC52 /* HostsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostsView.swift; sourceTree = "<group>"; };
 		2D09AF6B0BEABB5EE07D4FCB /* commandDictionary.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = commandDictionary.plist; sourceTree = "<group>"; };
+		2DD0B3F05AA897E183EC18EA /* ClaudeCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCredentials.swift; sourceTree = "<group>"; };
 		3A78CCE8E8F0A321AC60780B /* SSHConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConfigTests.swift; sourceTree = "<group>"; };
 		3C1F32D30A380CE6DC280E33 /* vimconfig */ = {isa = PBXFileReference; lastKnownFileType = folder; name = vimconfig; path = Tern/Resources/vimconfig; sourceTree = SOURCE_ROOT; };
 		3E7CCD421FF2ACF21FD8E02C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -104,6 +108,7 @@
 		46B86E01CC62FA1249342EAF /* SystemEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemEnvironment.swift; sourceTree = "<group>"; };
 		47C0D3116FAAAFA0FE393820 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		48B9A4959A1FEFFD54D0D9C1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4CCB473BEFB6FF8B63CC1921 /* ClaudeAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAgent.swift; sourceTree = "<group>"; };
 		511D0C6207B50F2B2CB4B620 /* TernSupport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TernSupport.h; sourceTree = "<group>"; };
 		53C3EEE137664362D0CDDDF6 /* TernSystemBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TernSystemBridge.m; sourceTree = "<group>"; };
 		588E76D8667950408A18D04B /* TerminalHostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalHostView.swift; sourceTree = "<group>"; };
@@ -132,6 +137,7 @@
 		C7827AB2CA9A03E7913C9CE6 /* TernSupport.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TernSupport.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DCF9390C092415638506FA78 /* SettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStoreTests.swift; sourceTree = "<group>"; };
 		DDF7BD8CA737374BE51186E9 /* TernUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TernUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DEC07D6BFB65C7F7AE378F90 /* AnthropicClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicClient.swift; sourceTree = "<group>"; };
 		E3E67624AD88007B5E0B063F /* TerminalScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalScreen.swift; sourceTree = "<group>"; };
 		EDA9665EEBC3D086FDA5524C /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		F0F7626FAE92F42FFE7B9FC0 /* cacert.pem */ = {isa = PBXFileReference; path = cacert.pem; sourceTree = "<group>"; };
@@ -216,6 +222,16 @@
 				6C38D0BDC43142142B9FE9DB /* TernUITests.swift */,
 			);
 			path = TernUITests;
+			sourceTree = "<group>";
+		};
+		5026D215D39D8273733F2258 /* Claude */ = {
+			isa = PBXGroup;
+			children = (
+				DEC07D6BFB65C7F7AE378F90 /* AnthropicClient.swift */,
+				4CCB473BEFB6FF8B63CC1921 /* ClaudeAgent.swift */,
+				2DD0B3F05AA897E183EC18EA /* ClaudeCredentials.swift */,
+			);
+			path = Claude;
 			sourceTree = "<group>";
 		};
 		5A450F05DF7571ACABA2226F /* Products */ = {
@@ -327,6 +343,7 @@
 			children = (
 				BB5EA534F0980077198111F3 /* App */,
 				6A559E3CA31696673667DCE0 /* Bridge */,
+				5026D215D39D8273733F2258 /* Claude */,
 				0B8568FE832A36BA143BB774 /* Commands */,
 				6B89D6366FFB491BEB362D00 /* Design */,
 				023D763105EC46D78B1AEA4F /* Hosts */,
@@ -582,7 +599,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3B5CE37FA88490FF256ADC54 /* AnthropicClient.swift in Sources */,
 				7655E0D81C972B76957B5AE2 /* AppModel.swift in Sources */,
+				DD092779D24A161B9AE6294B /* ClaudeAgent.swift in Sources */,
+				145D7D457AD3271DDD8F3574 /* ClaudeCredentials.swift in Sources */,
 				4A730F07391B1A21D38700C8 /* Components.swift in Sources */,
 				6814B9B67162CC222F8D8333 /* FolderPicker.swift in Sources */,
 				5637788C4A9931579EA18DE7 /* HelpText.swift in Sources */,
