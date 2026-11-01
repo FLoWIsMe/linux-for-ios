@@ -28,7 +28,8 @@ class citizen.
   suggestions, syntax highlighting as you type, git branch in the prompt.
 * **Light and dark, properly.** Eleven terminal palettes, three fonts, a chrome that follows the
   system or your choice.
-* **Files you can reach.** Home is the app's Documents folder, visible in the Files app.
+* **Files you can reach.** Home is the app's Documents folder, visible in the Files app, and
+  `mount Downloads` attaches Downloads, iCloud Drive or any other app's folder under `~/mnt`.
 * **SSH without friction.** Generate and copy keys, keep hosts in `~/.ssh/config`, connect in one tap.
 * **Nothing phones home.** No analytics, no accounts, no network use except what you run.
 

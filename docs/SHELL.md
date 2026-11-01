@@ -100,7 +100,9 @@ the shell never changes the process's own standard descriptors.
 `-p`), `ulimit`, `umask`, `unalias`, `unset` (`-v`, `-f`), `wait`, `which`.
 
 `help`, `history` and `clear` are forwarded to the host application first (the terminal owns
-history and the screen); `clear` falls back to printing the clear screen sequence.
+history and the screen); `clear` falls back to printing the clear screen sequence. The app adds
+its own commands the same way: `tern`, `open`, `mount`, `umount`, `pbcopy`, `pbpaste`, `keys`,
+`hosts`, `settings`, `newtab`, `about`.
 
 A few coreutils that the toolchain lacks are builtins too, with the everyday options: `cut`
 (`-b`, `-c`, `-f`, `-d`, `-s`, `--output-delimiter`, `--complement`), `seq` (`-s`, `-w`, `-f`,

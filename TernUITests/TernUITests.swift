@@ -177,32 +177,35 @@ final class TernUITests: XCTestCase {
         type("umount Downloads >/dev/null 2>&1; mount Downloads\n")
 
         // The picker is a remote view controller; XCUITest sees its controls as part of this app.
-        let cancel = app.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 10), "Folder picker did not appear")
+        // It opens wherever Files was last, so the Open button is the one reliable sign it is up.
+        let open = app.buttons["DOCPicker.actionButton"].firstMatch
+        XCTAssertTrue(open.waitForExistence(timeout: 10), "Folder picker did not appear")
         screenshot("10-mount-picker")
 
         let downloads = app.staticTexts["Downloads"].firstMatch
         if !downloads.waitForExistence(timeout: 3) {
-            // The picker remembers the last location; go to the top level of local storage.
             let browse = app.buttons["Browse"].firstMatch
             if browse.exists { browse.tap() }
             let local = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'On My'")).firstMatch
             if local.waitForExistence(timeout: 3) { local.tap() }
         }
         guard downloads.waitForExistence(timeout: 5) else {
-            cancel.tap()
+            app.swipeDown()
             throw XCTSkip("No Downloads folder in the Simulator's Files storage; run scripts/seed-simulator-downloads.sh")
         }
-        downloads.tap()
-        let open = app.buttons["Open"].firstMatch
-        XCTAssertTrue(open.waitForExistence(timeout: 5), "Folder picker has no Open button")
+        // Tapping the cell enters the folder (its title becomes the actions menu in the bar);
+        // Open then picks the folder being shown.
+        let cell = app.cells.matching(NSPredicate(format: "label BEGINSWITH 'Downloads'")).firstMatch
+        (cell.exists ? cell : downloads).tap()
+        let title = app.navigationBars.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Downloads'")).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "Did not enter the Downloads folder")
         open.tap()
 
-        waitForText("at ~/mnt/Downloads")
+        waitForText("Mounted On My iPhone/Downloads at ~/mnt/Downloads")
         type("cat ~/mnt/Downloads/tern-mount-check.txt\n")
         waitForText("mount-check-ok")
         type("mount\n")
-        waitForText("~/mnt/Downloads")
+        waitForText("~/mnt/Downloads  On My iPhone/Downloads")
         screenshot("11-mounted")
 
         // The bookmark must bring the folder back after a relaunch.

@@ -110,6 +110,16 @@ forwards them to `ShellSession.setRawInput`.
   constants in place when it copies the frameworks (shorter strings, NUL padded, only in the
   `__TEXT` string sections), and `scripts/build-ssh.sh` / `scripts/build-vim.sh` make the same
   change at source level for frameworks built locally.
+* `mount <name>` (`MountStore`, `FolderPicker`) attaches a folder from outside the sandbox. iOS
+  only hands such folders out through the document picker, as a security-scoped URL whose
+  sandbox extension is consumed with `startAccessingSecurityScopedResource`; that opens the real
+  path for the whole process, so ls, vim, lg2 and every other in-process tool can use it. The
+  store keeps a bookmark of the URL (implicitly security scoped on iOS) in
+  `Library/Application Support/mounts.json`, resolves and reopens every bookmark during
+  bootstrap, and links the real path at `~/mnt/<name>`. The link is what makes the folder look
+  like a directory to the shell: `cd` keeps the logical path, every command `chdir`s to it, and
+  `umount` only removes the link and the bookmark. `~/mnt` is created on the first mount and
+  removed after the last, so the Files app never shows an empty folder.
 * `TernSupport` uses dyld interposing to answer `getpwuid`/`getpwnam` with a synthesized
   `mobile` user whenever the system user database cannot resolve the process user. ssh, scp,
   sftp, ssh-keygen and whoami all start with that lookup and refuse to run without it; devices
