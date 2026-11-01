@@ -4,11 +4,15 @@ This is the complete path from a clean checkout to a build on the App Store. Ste
 **(account owner)** need the Apple Developer account holder; everything else can be scripted.
 
 Status for 1.0.0 (November 1, 2026): the app record exists in App Store Connect (app id
-6829323678, team 485J44YA77), build 3 (which adds `mount`) is uploaded and attached to version
-1.0.0 and to the internal TestFlight group, the listing, screenshots, age rating, review notes,
-price (free) and availability (all territories) are set through the API, and the App Privacy
-answers ("no data collected") are saved. What remains is the account owner publishing the
-privacy answers and pressing Add for Review.
+6829323678, team 485J44YA77), build 4 (which adds the built-in `claude` command and tap-to-accept
+autosuggestions) is uploaded and attached to version 1.0.0 and to the internal TestFlight group,
+the listing, screenshots, age rating, review notes, price (free) and availability (all
+territories) are set through the API, and the App Privacy answers ("no data collected") are saved.
+What remains is the account owner publishing the privacy answers and pressing Add for Review.
+
+Note on `claude`: the key is entered by the user and billed to their own Anthropic account; Tern
+collects nothing. If App Review asks, the app talks only to api.anthropic.com with the user's own
+key, which is stored in the device Keychain.
 
 ## One time setup
 
