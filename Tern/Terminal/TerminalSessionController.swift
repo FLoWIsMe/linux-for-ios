@@ -75,6 +75,7 @@ final class TerminalSessionController: NSObject, Identifiable {
         session.hostCommands = hostCommands
         terminalView.terminalDelegate = self
         terminalView.deleteWordBackward = { [weak self] in self?.session.deleteWordBackward() ?? false }
+        terminalView.editorLine = { [weak self] in self?.session.editorLine }
         terminalView.optionAsMetaKey = settings.optionAsMeta
         terminalView.allowMouseReporting = true
         terminalView.bellStyle = .sound
@@ -265,6 +266,13 @@ extension TerminalSessionController: ShellSessionDelegate {
     nonisolated func session(_ session: ShellSession, didChangeMode mode: SessionInputMode) {
         Task { @MainActor in
             self.mode = mode
+            self.terminalView.scheduleDocumentSync()
+        }
+    }
+
+    nonisolated func session(_ session: ShellSession, didChangeLine line: String?) {
+        Task { @MainActor in
+            self.terminalView.scheduleDocumentSync()
         }
     }
 

@@ -141,8 +141,10 @@ final class SessionRecorder: ShellSessionDelegate {
     var started: [[String]] = []
     var finished: [(argv: [String], status: Int32)] = []
     var exitStatus: Int32? = nil
+    var lines: [String?] = []
 
     func session(_ session: ShellSession, didChangeMode mode: SessionInputMode) { modes.append(mode) }
+    func session(_ session: ShellSession, didChangeLine line: String?) { lines.append(line) }
     func session(_ session: ShellSession, didChangeDirectory path: String) { directories.append(path) }
     func session(_ session: ShellSession, didChangeTitle title: String) { titles.append(title) }
     func session(_ session: ShellSession, didStartCommand argv: [String]) { started.append(argv) }
@@ -371,6 +373,37 @@ final class SessionTests: XCTestCase {
         startSession()
         session.submit("echo queued")
         XCTAssertTrue(waitUntil { self.screen == "$ echo queued\nqueued\n$ " }, screen)
+    }
+
+    func testLineChangesAreReportedForTheKeyboardDocument() {
+        startSession()
+        waitForPrompt()
+        XCTAssertEqual(recorder.lines, [""], "a fresh prompt reports its empty line")
+        XCTAssertEqual(session.editorLine, "")
+        type("ab")
+        XCTAssertEqual(recorder.lines.suffix(2), ["a", "ab"])
+        XCTAssertEqual(session.editorLine, "ab")
+        session.handleInput([0x7f])
+        XCTAssertEqual(recorder.lines.last, "a")
+        // Cursor movement changes nothing and reports nothing.
+        let count = recorder.lines.count
+        session.handleInput([0x1b, 0x5b, 0x44])
+        XCTAssertEqual(recorder.lines.count, count)
+        // During Ctrl-R the query is what a backspace edits.
+        session.handleInput([0x12])
+        type("ec")
+        XCTAssertEqual(recorder.lines.last, "ec")
+        XCTAssertEqual(session.editorLine, "ec")
+        session.handleInput([0x07])
+        XCTAssertEqual(recorder.lines.last, "a")
+        // Submitting ends the line; a running command has no line; the next prompt starts empty.
+        type("\u{15}cat\r")
+        XCTAssertTrue(waitUntil { self.session.mode == .cooked(command: "cat") }, "\(session.mode)")
+        XCTAssertNil(session.editorLine)
+        XCTAssertEqual(recorder.lines.last ?? "unset", nil)
+        session.handleInput([0x04])
+        waitForPrompt()
+        XCTAssertEqual(recorder.lines.last ?? "unset", "")
     }
 
     func testDeleteWordBackwardActsAtThePromptOnly() {

@@ -39,6 +39,10 @@ public protocol ShellSessionDelegate: AnyObject {
     func session(_ session: ShellSession, didFinishCommand argv: [String], status: Int32)
     func sessionDidRequestBell(_ session: ShellSession)
     func sessionDidExit(_ session: ShellSession, status: Int32)
+    /// The text of the line being edited at the prompt changed, or editing ended (`nil`). Sent on
+    /// the main thread, after the terminal output for the change was written. Also sent when a new
+    /// line begins, even when it is as empty as the last one ended.
+    func session(_ session: ShellSession, didChangeLine line: String?)
 }
 
 public extension ShellSessionDelegate {
@@ -49,6 +53,7 @@ public extension ShellSessionDelegate {
     func session(_ session: ShellSession, didFinishCommand argv: [String], status: Int32) {}
     func sessionDidRequestBell(_ session: ShellSession) {}
     func sessionDidExit(_ session: ShellSession, status: Int32) {}
+    func session(_ session: ShellSession, didChangeLine line: String?) {}
 }
 
 /// App provided commands such as `tern`, `open`, `pbcopy`, `help`. Called on the shell thread.
@@ -164,6 +169,8 @@ public final class ShellSession: ShellHost {
     private let executor: CommandExecutor
     private weak var output: TerminalOutputSink?
     private let editor: LineEditor
+    /// The line last reported through `didChangeLine`, so unchanged text is not reported again.
+    private var reportedLine: String?
     /// The `ShellHost` the interpreter talks to. It exists before the session finishes initializing
     /// and forwards every call here.
     private let hostBridge: SessionHostBridge
@@ -514,9 +521,10 @@ public final class ShellSession: ShellHost {
             let initial = pendingEditorText ?? ""
             pendingEditorText = nil
             write(editor.beginLine(prompt: request.prompt, initialText: initial))
+            reportLine(force: true)
             if !pendingSubmits.isEmpty {
                 let line = pendingSubmits.removeFirst()
-                write(editor.setText(line))
+                writeEditor(editor.setText(line))
                 process(editor.feed(key: .enter))
                 return
             }
@@ -564,6 +572,28 @@ public final class ShellSession: ShellHost {
     }
 
     // MARK: Input (main thread)
+
+    /// The text being edited at the prompt, or nil while a command or a read owns the input. Main
+    /// thread only. The terminal view mirrors it into the text input document the software keyboard
+    /// looks at, so the delete key can see there is something to delete.
+    public var editorLine: String? {
+        guard editorActive, case .prompt = mode else { return nil }
+        return editor.editableText
+    }
+
+    /// Reports the line to the delegate when it differs from the last report, or always when `force`.
+    private func reportLine(force: Bool = false) {
+        let line = editorLine
+        guard force || line != reportedLine else { return }
+        reportedLine = line
+        delegate?.session(self, didChangeLine: line)
+    }
+
+    /// Writes line editor output and reports the line if it changed.
+    private func writeEditor(_ output: String) {
+        write(output)
+        reportLine()
+    }
 
     /// Keyboard bytes from the terminal emulator (printable text, control characters, escape sequences).
     public func handleInput(_ bytes: [UInt8]) {
@@ -659,6 +689,7 @@ public final class ShellSession: ShellHost {
             editorActive = false
             deliver(.eof)
         }
+        reportLine()
     }
 
     private func writeToCommandStdin(_ bytes: [UInt8]) {
@@ -689,7 +720,7 @@ public final class ShellSession: ShellHost {
         let current = state
         lock.unlock()
         if editorActive, case .prompt = current.mode {
-            write(editor.insert(text))
+            writeEditor(editor.insert(text))
             return
         }
         // While a command or a read is active the bytes follow the normal routing rules.
@@ -800,7 +831,7 @@ public final class ShellSession: ShellHost {
         let current = state
         lock.unlock()
         if editorActive, case .prompt = current.mode {
-            write(editor.setText(line))
+            writeEditor(editor.setText(line))
             process(editor.feed(key: .enter))
             return
         }
@@ -822,7 +853,7 @@ public final class ShellSession: ShellHost {
         let current = state
         lock.unlock()
         if editorActive, case .prompt = current.mode {
-            write(editor.setText(text))
+            writeEditor(editor.setText(text))
         } else {
             pendingEditorText = text
         }

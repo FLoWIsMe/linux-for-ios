@@ -100,11 +100,14 @@ forwards them to `ShellSession.setRawInput`.
   running command's own copy (`ios_setenv`), then lets `ios_setWindowSize` send `SIGWINCH`; the
   iOS ports read the variables instead of `TIOCGWINSZ`.
 * `TerminalScreen` hosts a SwiftTerm `TerminalView` per session and the custom keyboard bar.
-  The view is `TernTerminalView`, a small subclass: it tells iOS the input always has text so the
-  software keyboard's delete key auto-repeats (SwiftTerm answers from a shadow of what was typed,
-  which is empty after a completion, a history recall or a paste), and it times those repeats
-  with `DeleteKeyAccelerator` from TernCore so a long press switches from characters to words at
-  the prompt (`ShellSession.deleteWordBackward`). Commands keep getting plain backspaces.
+  The view is `TernTerminalView`, a small subclass. The software keyboard only deletes when the
+  `UITextInput` document behind the view has text before the caret, and SwiftTerm's document is a
+  shadow of what the keyboard itself typed, empty after a completion, a history recall or a paste.
+  The subclass mirrors the line being edited into that document (`ShellSession.editorLine`,
+  reported through `didChangeLine`) without sending anything to the shell, keeps placeholder room
+  in it while a command owns the screen so every press reaches the command, and times the
+  keyboard's auto-repeat with `DeleteKeyAccelerator` from TernCore so a long press switches from
+  characters to words at the prompt (`ShellSession.deleteWordBackward`).
 * Everything the user sees is themed through `Theme`: a light and a dark variant for the chrome
   plus a set of 16 ANSI colors, background, foreground and cursor color for the terminal.
 * Home is the Documents folder. `$HOME`, `~`, the Files app and the prompt's `~` all mean the

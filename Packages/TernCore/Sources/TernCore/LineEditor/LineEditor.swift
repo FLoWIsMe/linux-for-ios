@@ -107,6 +107,11 @@ public final class LineEditor {
 
     public var text: String { String(buffer) }
 
+    /// What a backspace would edit right now: the search query during an incremental search,
+    /// otherwise the line. Mirrored into the terminal view's text input document so the software
+    /// keyboard can see there is something to delete.
+    public var editableText: String { search?.query ?? text }
+
     /// Starts editing a new line. Returns the bytes that draw the prompt (and `initialText`).
     public func beginLine(prompt: RenderedPrompt, initialText: String = "") -> String {
         self.prompt = prompt
