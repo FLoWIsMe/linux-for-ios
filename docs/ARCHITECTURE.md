@@ -120,7 +120,16 @@ forwards them to `ShellSession.setRawInput`.
   like a directory to the shell: `cd` keeps the logical path, every command `chdir`s to it, and
   `umount` only removes the link and the bookmark. `~/mnt` is created on the first mount and
   removed after the last, so the Files app never shows an empty folder.
-* `TernSupport` uses dyld interposing to answer `getpwuid`/`getpwnam` with a synthesized
+* `claude` (`ClaudeAgent`, `AnthropicClient`, `ClaudeCredentials`) is a small coding agent. The API
+  key lives in the Keychain (`claude login`), or the `ANTHROPIC_API_KEY` environment variable. The
+  client streams the Messages API (server-sent events) and assembles the assistant's text and
+  `tool_use` blocks; the agent runs the requested tools (run_command, read_file, write_file,
+  list_directory) and feeds `tool_result` blocks back until the model stops. Commands run in an
+  isolated sub-shell (`Shell.capture`) with its own ios_system session, seeded from the tab's
+  current directory, so the agent never reenters the interactive interpreter it was launched from.
+  The user confirms each command and file write unless `claude -y` is used. Model and endpoint are
+  configurable (`claude model`, `ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`).
+* * `TernSupport` uses dyld interposing to answer `getpwuid`/`getpwnam` with a synthesized
   `mobile` user whenever the system user database cannot resolve the process user. ssh, scp,
   sftp, ssh-keygen and whoami all start with that lookup and refuse to run without it; devices
   have `/etc/passwd`, the Simulator does not. The shim tries the system first and only fills in

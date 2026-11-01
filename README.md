@@ -31,6 +31,8 @@ class citizen.
 * **Files you can reach.** Home is the app's Documents folder, visible in the Files app, and
   `mount Downloads` attaches Downloads, iCloud Drive or any other app's folder under `~/mnt`.
 * **SSH without friction.** Generate and copy keys, keep hosts in `~/.ssh/config`, connect in one tap.
+* **Claude built in.** Type `claude` to get a coding agent in your terminal that can run commands
+  and edit files, asking before each change. Bring your own Anthropic API key.
 * **Nothing phones home.** No analytics, no accounts, no network use except what you run.
 
 ## Screenshots

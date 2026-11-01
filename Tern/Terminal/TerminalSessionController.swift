@@ -120,7 +120,7 @@ final class TerminalSessionController: NSObject, Identifiable {
     static func welcomeMessage(settings: SettingsStore) -> String? {
         guard settings.welcomeTips else { return nil }
         // Short enough for the narrowest phone at the largest default font without wrapping.
-        return "Tern \(SystemEnvironment.appVersion). Type \u{1b}[1mhelp\u{1b}[0m for a tour."
+        return "Tern \(SystemEnvironment.appVersion). Type \u{1b}[1mhelp\u{1b}[0m for a tour, or \u{1b}[1mclaude\u{1b}[0m to chat with Claude."
     }
 
     // MARK: Appearance
