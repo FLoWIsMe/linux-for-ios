@@ -24,6 +24,7 @@
 		4B84BC1FE3BBC341CBFE8817 /* SettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCF9390C092415638506FA78 /* SettingsStoreTests.swift */; };
 		4DBEF9376EF9471A005FC1C2 /* TerminalScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E67624AD88007B5E0B063F /* TerminalScreen.swift */; };
 		5637788C4A9931579EA18DE7 /* HelpText.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFF5F50354E775B3B159D97 /* HelpText.swift */; };
+		6814B9B67162CC222F8D8333 /* FolderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93DE6DB6E0C4FC945F7D6795 /* FolderPicker.swift */; };
 		6B84492B9FCDB6CD6DF22F91 /* TernCore in Frameworks */ = {isa = PBXBuildFile; productRef = CD29F7D490E42023A14AF3A8 /* TernCore */; };
 		74E7080D57E0F6D60A8FC590 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2F4D2DBD46F2395FEE51EEE /* SettingsView.swift */; };
 		74EBF33F3D9DBFE935D5C91C /* SystemEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B86E01CC62FA1249342EAF /* SystemEnvironment.swift */; };
@@ -44,6 +45,7 @@
 		CB728E73A56E7B6471BC761D /* HostsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D86249314B11C310C44DC52 /* HostsView.swift */; };
 		EAE0C3D70148F6970440AAC2 /* ios_system.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F9217ED4701123753F704B0 /* ios_system.xcframework */; };
 		FA4AA5B7ABD6E323E0B87060 /* SSHConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 012024CB1346BE4D358B07AC /* SSHConfig.swift */; };
+		FC90CA71474E21BB6852F0FB /* MountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFFD0A809521BF71F48BC53 /* MountStore.swift */; };
 		FCC4D5CE69202D07BE37E2B4 /* KeysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69A1145179A2989FCA3D544F /* KeysView.swift */; };
 /* End PBXBuildFile section */
 
@@ -114,6 +116,7 @@
 		85A32BDBDA1E857789BE0D7D /* KeyboardBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardBar.swift; sourceTree = "<group>"; };
 		88E3C4EA3E144D12F34AF4A7 /* TernSupport.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = TernSupport.c; sourceTree = "<group>"; };
 		914FF04FD5D95025EC2A4B1B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		93DE6DB6E0C4FC945F7D6795 /* FolderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderPicker.swift; sourceTree = "<group>"; };
 		957882352A9BBAE8ED97F95D /* TernHostCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TernHostCommands.swift; sourceTree = "<group>"; };
 		95B2A2A11F5DAA96B6EFB909 /* TerminalSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSessionController.swift; sourceTree = "<group>"; };
 		9F9217ED4701123753F704B0 /* ios_system.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = ios_system.xcframework; path = Toolchain/frameworks/ios_system.xcframework; sourceTree = "<group>"; };
@@ -122,6 +125,7 @@
 		AEFF5F50354E775B3B159D97 /* HelpText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpText.swift; sourceTree = "<group>"; };
 		B28E7889A781E16CA408937C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB55CF67B3D33C107AFCE430 /* URLCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCommands.swift; sourceTree = "<group>"; };
+		BFFFD0A809521BF71F48BC53 /* MountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MountStore.swift; sourceTree = "<group>"; };
 		C2F4D2DBD46F2395FEE51EEE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		C6B1962F97D1AE340138E9E8 /* Tern.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tern.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6E139CE27E9775E10468782 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -225,6 +229,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		60BD88312F38B01C0A93A852 /* Mounts */ = {
+			isa = PBXGroup;
+			children = (
+				93DE6DB6E0C4FC945F7D6795 /* FolderPicker.swift */,
+				BFFFD0A809521BF71F48BC53 /* MountStore.swift */,
+			);
+			path = Mounts;
+			sourceTree = "<group>";
+		};
 		65F75FE104ED980BBE5550C1 /* Support */ = {
 			isa = PBXGroup;
 			children = (
@@ -318,6 +331,7 @@
 				6B89D6366FFB491BEB362D00 /* Design */,
 				023D763105EC46D78B1AEA4F /* Hosts */,
 				A2CA4273B3260F11B50909D3 /* Keys */,
+				60BD88312F38B01C0A93A852 /* Mounts */,
 				19FFD713948A9A83ED56A6B8 /* Onboarding */,
 				F3053030D7CAF685189516CD /* Resources */,
 				8AEA3A763167F59445F43865 /* Settings */,
@@ -570,11 +584,13 @@
 			files = (
 				7655E0D81C972B76957B5AE2 /* AppModel.swift in Sources */,
 				4A730F07391B1A21D38700C8 /* Components.swift in Sources */,
+				6814B9B67162CC222F8D8333 /* FolderPicker.swift in Sources */,
 				5637788C4A9931579EA18DE7 /* HelpText.swift in Sources */,
 				CB728E73A56E7B6471BC761D /* HostsView.swift in Sources */,
 				BE4C085AB9973D418DCAC78C /* IOSSystemExecutor.swift in Sources */,
 				36358DFCF5769B1AD8D09FC5 /* KeyboardBar.swift in Sources */,
 				FCC4D5CE69202D07BE37E2B4 /* KeysView.swift in Sources */,
+				FC90CA71474E21BB6852F0FB /* MountStore.swift in Sources */,
 				928C8EEB67C58D046F96C343 /* OnboardingView.swift in Sources */,
 				FA4AA5B7ABD6E323E0B87060 /* SSHConfig.swift in Sources */,
 				08FE3B3170F21C40B6B0F944 /* SSHKeyStore.swift in Sources */,
