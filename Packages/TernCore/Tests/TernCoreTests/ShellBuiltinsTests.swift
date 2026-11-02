@@ -230,4 +230,37 @@ final class ShellBuiltinsTests: XCTestCase {
         let directory = ShellTesting.run("./nope; echo $?; ./; echo $?")
         XCTAssertEqual(directory.stdout, "127\n126\n")
     }
+
+    /// Mounted folders live under ~/mnt. A command that fails on a /mnt path which exists under
+    /// ~/mnt gets a hint; a /mnt path that exists nowhere gets none.
+    func testMountPathHint() throws {
+        let home = ShellTesting.makeTemporaryDirectory()
+        let mounted = home + "/mnt/Downloads"
+        try FileManager.default.createDirectory(atPath: mounted, withIntermediateDirectories: true)
+        try "echo ran\n".write(toFile: mounted + "/setup.sh", atomically: true, encoding: .utf8)
+        let hint = "mounted folders live under ~/mnt, not /mnt. Did you mean: ~/mnt/Downloads/setup.sh?"
+
+        // An external interpreter fails with its own message; the shell adds where the file really is.
+        let external = ShellTesting.run("sh /mnt/Downloads/setup.sh; echo $?", workingDirectory: home)
+        XCTAssertNotEqual(external.stdout, "0\n", external.stderr)
+        XCTAssertTrue(external.stderr.contains("tsh: " + hint), external.stderr)
+
+        // Running the path directly and cd get the same hint.
+        let direct = ShellTesting.run("/mnt/Downloads/setup.sh; echo $?", workingDirectory: home)
+        XCTAssertEqual(direct.stdout, "127\n")
+        XCTAssertTrue(direct.stderr.contains("tsh: /mnt/Downloads/setup.sh: No such file or directory"), direct.stderr)
+        XCTAssertTrue(direct.stderr.contains(hint), direct.stderr)
+        let cd = ShellTesting.run("cd /mnt/Downloads; echo $?", workingDirectory: home)
+        XCTAssertEqual(cd.stdout, "1\n")
+        XCTAssertTrue(cd.stderr.contains("tsh: cd: /mnt/Downloads: No such file or directory"), cd.stderr)
+        XCTAssertTrue(cd.stderr.contains("Did you mean: ~/mnt/Downloads?"), cd.stderr)
+
+        // No hint when the folder is not mounted either, and none when the command succeeds.
+        let unmounted = ShellTesting.run("cd /mnt/Nope; echo $?", workingDirectory: home)
+        XCTAssertEqual(unmounted.stdout, "1\n")
+        XCTAssertFalse(unmounted.stderr.contains("mounted folders"), unmounted.stderr)
+        let works = ShellTesting.run("sh ~/mnt/Downloads/setup.sh; echo $?", workingDirectory: home)
+        XCTAssertEqual(works.stdout, "ran\n0\n")
+        XCTAssertEqual(works.stderr, "")
+    }
 }

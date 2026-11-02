@@ -71,6 +71,10 @@ enum HelpText {
           ^C           interrupt the running command
           Swipe the symbol row for | ~ / : quotes and more.
 
+        \(bold)Selecting text\(reset)
+          Double-tap a word or triple-tap a line to select it. Touch and hold for Select,
+          Select All and Paste. Tap Copy to copy the selection, or tap anywhere to clear it.
+
         \(bold)Hardware keyboards\(reset) work as expected, including Ctrl, Option as Alt, and:
           Cmd-T new tab      Cmd-W close tab      Cmd-K clear
           Cmd-1...9 switch tab        Cmd-Shift-[ and ] previous and next tab
@@ -156,6 +160,9 @@ enum HelpText {
           cd ~/mnt/Downloads  work there like in any other directory
           mount               list mounted folders
           umount Downloads    detach it again (nothing inside the folder is deleted)
+
+        The path is ~/mnt, not /mnt (iOS does not let an app create folders at the root), so
+        write sh ~/mnt/Downloads/setup.sh rather than sh /mnt/Downloads/setup.sh.
 
         iOS only lets an app reach folders you choose yourself, which is why every mount starts
         with the picker. Safari's downloads are in iCloud Drive > Downloads unless you changed

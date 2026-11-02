@@ -107,7 +107,12 @@ forwards them to `ShellSession.setRawInput`.
   reported through `didChangeLine`) without sending anything to the shell, keeps placeholder room
   in it while a command owns the screen so every press reaches the command, and times the
   keyboard's auto-repeat with `DeleteKeyAccelerator` from TernCore so a long press switches from
-  characters to words at the prompt (`ShellSession.deleteWordBackward`).
+  characters to words at the prompt (`ShellSession.deleteWordBackward`). The subclass also finishes
+  SwiftTerm's Select All: SwiftTerm selects the whole scrollback and lets the menu close, so nothing
+  offered Copy and the next tap cleared the selection. `TernTerminalView` records where the menu
+  came up (it adds itself as a target of SwiftTerm's long press and tap recognizers) and, after
+  `selectAll`, re-presents the standard menu there through `showStandardContextMenu(at:)`, the
+  same thing SwiftTerm already does after Select. Cmd-A from a hardware keyboard gets no menu.
 * Everything the user sees is themed through `Theme`: a light and a dark variant for the chrome
   plus a set of 16 ANSI colors, background, foreground and cursor color for the terminal.
 * Home is the Documents folder. `$HOME`, `~`, the Files app and the prompt's `~` all mean the
