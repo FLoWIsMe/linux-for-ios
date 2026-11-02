@@ -126,8 +126,11 @@ background job cannot be brought back to the foreground).
 
 Messages follow the shell convention: `tsh: name: command not found`, `tsh: line 3: syntax error
 near unexpected token `fi'`, `tsh: cd: dir: No such file or directory`. A command that is not
-found suggests the closest known command (`Did you mean: echo?`). Syntax errors return 2,
-missing commands 127, interrupted programs 130.
+found suggests the closest known command (`Did you mean: echo?`). A command that fails on a
+`/mnt/...` path, when that path exists under `~/mnt` (where Tern attaches folders; see `mount`),
+is followed by `tsh: mounted folders live under ~/mnt, not /mnt. Did you mean: ~/mnt/...?`, since the
+program's own message (`dash: 0: Can't open /mnt/Downloads/setup.sh`) does not say where the folder
+is. Syntax errors return 2, missing commands 127, interrupted programs 130.
 
 ## How it differs from bash
 

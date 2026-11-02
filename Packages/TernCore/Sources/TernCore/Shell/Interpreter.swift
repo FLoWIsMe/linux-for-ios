@@ -611,6 +611,7 @@ final class Interpreter {
                     return try runScriptFile(path: path, arguments: Array(argv.dropFirst()), displayName: name)
                 }
                 reportError("\(name): No such file or directory", line: line)
+                hintMountPath(in: [name], line: line)
                 return ExitStatus.notFound
             }
             reportError("\(name): command not found", line: line)
@@ -654,7 +655,24 @@ final class Interpreter {
         let status = executor.run(command)
         host?.shellDidFinish(externalCommand: argv, status: status)
         try checkInterrupt()
+        if status != 0 { hintMountPath(in: argv, line: line) }
         return status
+    }
+
+    /// Linux keeps mounted volumes under /mnt; Tern keeps them under ~/mnt, because iOS does not let
+    /// an app create directories at the root. People type the Linux path from habit, and the failure
+    /// they get is the program's own message ("dash: 0: Can't open /mnt/Downloads/setup.sh"), which
+    /// explains nothing. When a command fails and one of its words is a /mnt path that does exist
+    /// under ~/mnt, say where the folder really is. Nothing is printed when the path would not have
+    /// worked under ~/mnt either.
+    func hintMountPath(in words: [String], line: Int? = nil) {
+        let home = ctx.value("HOME") ?? shell.homeDirectory
+        for word in words where word == "/mnt" || word.hasPrefix("/mnt/") {
+            if FileManager.default.fileExists(atPath: home + word) {
+                reportError("mounted folders live under ~/mnt, not /mnt. Did you mean: ~\(word)?", line: line)
+                return
+            }
+        }
     }
 
     /// Picks the closest known command name (edit distance 1 or 2) for "command not found" hints.
@@ -761,6 +779,7 @@ final class Interpreter {
         let path = ctx.absolutePath(argv[index])
         guard let data = FileManager.default.contents(atPath: path) else {
             reportError("\(argv[0]): \(argv[index]): No such file or directory")
+            hintMountPath(in: [argv[index]])
             return ExitStatus.notFound
         }
         return try runChildScript(source: String(decoding: data, as: UTF8.self), scriptName: argv[index], arguments: Array(argv[(index + 1)...]), options: options)

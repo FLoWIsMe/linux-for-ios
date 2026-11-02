@@ -592,6 +592,7 @@ extension Interpreter {
             }
         }
         reportError("cd: \(target): No such file or directory")
+        hintMountPath(in: [target])
         return 1
     }
 

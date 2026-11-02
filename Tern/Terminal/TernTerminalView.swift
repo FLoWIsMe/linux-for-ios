@@ -2,7 +2,8 @@ import UIKit
 import SwiftTerm
 import TernCore
 
-/// SwiftTerm's view with the delete key behaviour people expect from an iOS keyboard.
+/// SwiftTerm's view with the delete key behaviour people expect from an iOS keyboard, and an edit
+/// menu that follows through on Select All.
 ///
 /// The software keyboard decides on its own whether the delete key has anything to delete: it
 /// looks at the `UITextInput` document behind the view, and SwiftTerm's document is only a shadow
@@ -12,6 +13,11 @@ import TernCore
 /// anything to the shell), keeps it non empty while a command owns the screen so every press still
 /// reaches the command, and times the keyboard's auto-repeat so a long press speeds up from
 /// characters to words at the prompt, the way every other text field on the system behaves.
+///
+/// Select All in SwiftTerm's menu selected the whole scrollback and stopped there: the menu closed
+/// with the choice, nothing offered Copy, and the next tap cleared the selection again, so the item
+/// looked broken. After Select (a word) SwiftTerm brings the menu back over the selection; this view
+/// does the same after Select All, so Copy is one tap away.
 final class TernTerminalView: TerminalView {
     /// The line being edited at the prompt, or nil while a command or a read owns the input.
     var editorLine: (() -> String?)?
@@ -28,7 +34,59 @@ final class TernTerminalView: TerminalView {
     private static let placeholderLength = 64
     private static let placeholderMinimum = 16
 
+    /// Where the edit menu was last summoned (a touch and hold, or the taps that select a word or a
+    /// line), in the view's own coordinates. The menu that follows Select All is anchored there.
+    private var menuAnchor: CGPoint?
+    private var observesMenuGestures = false
+
     override var hasText: Bool { true }
+
+    // MARK: Edit menu
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        observeMenuGestures()
+    }
+
+    /// Listens in on the long press and tap recognizers SwiftTerm installed to learn where the menu
+    /// came up. Only the location is recorded; SwiftTerm keeps handling the gestures themselves.
+    private func observeMenuGestures() {
+        guard !observesMenuGestures else { return }
+        observesMenuGestures = true
+        for recognizer in gestureRecognizers ?? [] {
+            guard recognizer is UILongPressGestureRecognizer || recognizer is UITapGestureRecognizer else { continue }
+            recognizer.addTarget(self, action: #selector(rememberMenuAnchor(_:)))
+        }
+    }
+
+    @objc private func rememberMenuAnchor(_ recognizer: UIGestureRecognizer) {
+        let settled = recognizer is UILongPressGestureRecognizer ? recognizer.state == .began : recognizer.state == .ended
+        if settled { menuAnchor = recognizer.location(in: self) }
+    }
+
+    /// Selects everything, then brings the menu back so Copy is one tap away. Cmd-A from a hardware
+    /// keyboard is followed by Cmd-C, so it gets no menu.
+    override func selectAll(_ sender: Any?) {
+        super.selectAll(sender)
+        guard !(sender is UIKeyCommand) else { return }
+        // On the next turn of the run loop, once the menu that was tapped has gone; SwiftTerm
+        // re-presents the menu after Select the same way.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.selectionActive else { return }
+            self.showStandardContextMenu(at: self.menuPoint())
+        }
+    }
+
+    /// The anchor for the re-presented menu: where the menu last came up, kept inside the visible
+    /// part of the view (`bounds` is the visible rectangle of this scroll view), or its center.
+    private func menuPoint() -> CGPoint {
+        let visible = bounds
+        let point = menuAnchor ?? CGPoint(x: visible.midX, y: visible.midY)
+        return CGPoint(x: min(max(point.x, visible.minX), visible.maxX),
+                       y: min(max(point.y, visible.minY), visible.maxY))
+    }
+
+    // MARK: Delete key
 
     override func deleteBackward() {
         let action = accelerator.press(at: ProcessInfo.processInfo.systemUptime)
